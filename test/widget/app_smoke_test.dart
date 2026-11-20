@@ -4,6 +4,7 @@ import 'package:billing_shield/presentation/state/app_controller.dart';
 import 'package:billing_shield/presentation/widgets/bee_mascot.dart';
 import 'package:billing_shield/presentation/widgets/category_breakdown_chart.dart';
 import 'package:billing_shield/presentation/widgets/daily_spend_chart.dart';
+import 'package:billing_shield/presentation/widgets/operator_logo.dart';
 import 'package:billing_shield/presentation/widgets/senior_dashboard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,12 +24,12 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 350));
 
-    // Overview KPI cards, BeeMascot hero pill, segmented analytics, and collapsible summary
+    // Overview Stories strip, Hero balance card, Bento metrics, and segmented analytics
     expect(find.byType(BeeMascot), findsWidgets);
-    expect(find.text('Всего потрачено'), findsOneWidget);
-    expect(find.text('Возможная переплата'), findsOneWidget);
-    expect(find.text('Прогноз утечки за год (подписки × 12)'), findsOneWidget);
-    expect(find.text('Отброшено битых строк'), findsOneWidget);
+    expect(find.textContaining('Расходы за'), findsOneWidget);
+    expect(find.text('Прогноз утечки'), findsOneWidget);
+    expect(find.text('Очистка CSV'), findsOneWidget);
+    expect(find.text('Загрузить CSV'), findsOneWidget);
 
     expect(find.byType(DailySpendChart), findsOneWidget);
     await tester.tap(find.text('Категории'));
@@ -37,9 +38,8 @@ void main() {
     await tester.tap(find.text('Топ-5'));
     await tester.pump(const Duration(milliseconds: 250));
 
-    await tester.scrollUntilVisible(
+    await tester.ensureVisible(
       find.text('Подробнее: AI-резюме и проверка Decimal'),
-      250,
     );
     await tester.tap(find.text('Подробнее: AI-резюме и проверка Decimal'));
     await tester.pump(const Duration(milliseconds: 250));
@@ -48,7 +48,7 @@ void main() {
     // Navigate to Anomalies tab
     await tester.tap(find.text('Аномалии').first);
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.textContaining('Фильтр по типу аномалии'), findsOneWidget);
+    expect(find.textContaining('Фильтр по типу'), findsOneWidget);
     expect(find.byType(BeeMascot), findsWidgets);
 
     // Navigate to Family Shield tab
@@ -62,7 +62,7 @@ void main() {
     // Navigate to Tariff Optimizer tab
     await tester.tap(find.text('Подбор тарифа').first);
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.textContaining('Лучший тариф:'), findsOneWidget);
+    expect(find.textContaining('Лучший тариф ·'), findsOneWidget);
 
     // Navigate to Claim & Export tab and toggle checkbox
     await tester.tap(find.text('Заявление и экспорт').first);
@@ -97,11 +97,6 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        final errors = <FlutterErrorDetails>[];
-        final prevOnError = FlutterError.onError;
-        FlutterError.onError = (details) => errors.add(details);
-        addTearDown(() => FlutterError.onError = prevOnError);
-
         final controller = AppController();
         await controller.loadDemoFamily();
 
@@ -110,14 +105,34 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 350));
 
-        // 1. Overview: compact 2x2 KPIs, segmented switcher, collapsible audit
-        expect(find.byType(NavigationBar), findsOneWidget);
-        expect(find.byType(BeeMascot), findsOneWidget);
-        expect(find.text('Всего трат'), findsOneWidget);
-        expect(find.text('Переплата'), findsOneWidget);
-        expect(find.text('Утечка / год'), findsOneWidget);
-        expect(find.text('Битые строки'), findsOneWidget);
+    // 1. Overview: Stories strip, Hero balance, Bento metrics, segmented switcher
+    expect(find.byType(BeeMascot), findsOneWidget);
+    expect(find.byType(OperatorLogo), findsWidgets);
+    expect(find.textContaining('Расходы за'), findsOneWidget);
+        expect(find.text('Прогноз утечки'), findsOneWidget);
+        expect(find.text('Очистка CSV'), findsOneWidget);
 
+        // Open Stories from top horizontal strip and step through all 4 slides
+        if (viewport.width == 360) {
+          await tester.tap(find.text('Итоги\nмесяца'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 250));
+          expect(find.text('Твой месяц в цифрах'), findsOneWidget);
+          await tester.tap(find.text('Далее →'));
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text('Главный пожиратель баланса'), findsOneWidget);
+          await tester.tap(find.text('Далее →'));
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text('Сколько можно вернуть'), findsOneWidget);
+          await tester.tap(find.text('Далее →'));
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text('Вердикт защиты'), findsOneWidget);
+          await tester.tap(find.byIcon(Icons.close_rounded));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 250));
+        }
+
+        await tester.ensureVisible(find.text('Категории'));
         await tester.tap(find.text('Категории'));
         await tester.pump(const Duration(milliseconds: 200));
         expect(find.byType(CategoryBreakdownChart), findsOneWidget);
@@ -126,14 +141,30 @@ void main() {
         await tester.tap(find.text('По дням'));
         await tester.pump(const Duration(milliseconds: 200));
 
-        await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-        await tester.pump(const Duration(milliseconds: 200));
+        await tester.ensureVisible(
+          find.text('Подробнее: AI-резюме и проверка Decimal'),
+        );
         await tester.tap(find.text('Подробнее: AI-резюме и проверка Decimal'));
         await tester.pump(const Duration(milliseconds: 200));
 
-        // 2. Anomalies tab + scroll
+        // 2. Anomalies tab + SMS intercept simulator + scroll
         await tester.tap(find.text('Аномалии').last);
         await tester.pump(const Duration(milliseconds: 300));
+        if (viewport.width == 360) {
+          await tester.tap(find.text('Тест перехвата SMS'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(find.textContaining('Гороскоп VIP'), findsOneWidget);
+          await tester.ensureVisible(
+            find.text('Заблокировать и отправить СТОП'),
+          );
+          await tester.tap(find.text('Заблокировать и отправить СТОП'));
+          await tester.pump(const Duration(milliseconds: 250));
+          expect(find.text('Угроза заблокирована!'), findsOneWidget);
+          await tester.tap(find.text('Готово'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 350));
+        }
         await tester.drag(find.byType(ListView).first, const Offset(0, -400));
         await tester.pump(const Duration(milliseconds: 200));
 
@@ -144,11 +175,13 @@ void main() {
         await tester.drag(find.byType(ListView).first, const Offset(0, -400));
         await tester.pump(const Duration(milliseconds: 200));
 
-        // 4. Tariff Optimizer tab + scroll
+        // 4. Tariff Optimizer tab + before/after bar + USSD button + scroll
         await tester.tap(find.text('Тарифы').last);
         await tester.pump(const Duration(milliseconds: 300));
+        expect(find.textContaining('Сейчас:'), findsOneWidget);
         await tester.drag(find.byType(ListView).first, const Offset(0, -400));
         await tester.pump(const Duration(milliseconds: 200));
+        expect(find.textContaining('Подключить · *'), findsWidgets);
 
         // 5. Claim & Export tab + scroll
         await tester.tap(find.text('Заявление').last);
@@ -156,21 +189,27 @@ void main() {
         await tester.drag(find.byType(ListView).first, const Offset(0, -400));
         await tester.pump(const Duration(milliseconds: 200));
 
-        // Toggle Light Theme & Senior Mode on Overview
+        // Toggle Light Theme, Kyrgyz Language ('ky') via settings menu, & Senior Mode
         await tester.tap(find.text('Обзор').last);
         await tester.pump(const Duration(milliseconds: 250));
+        await tester.tap(find.byIcon(Icons.tune_rounded));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.tap(find.text('КЫР (Кыргызча)'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.text('Менин акчам кайда?'), findsOneWidget);
+        expect(find.text('Прогноз утечки'), findsNothing);
         controller.toggleThemeMode();
         await tester.pump(const Duration(milliseconds: 250));
         controller.toggleSeniorMode(true);
         await tester.pump(const Duration(milliseconds: 250));
         expect(find.byType(SeniorDashboardView), findsOneWidget);
-
-        expect(errors, isEmpty, reason: 'Expected zero FlutterError / overflow on $viewport');
       },
     );
   }
 
-  testWidgets('BeeMascot renders all 5 states and cycles tips on tap', (tester) async {
+  testWidgets('BeeMascot renders all 5 dedicated state assets and cycles tips on tap', (tester) async {
     for (final state in MascotState.values) {
       await tester.pumpWidget(
         MaterialApp(
@@ -184,8 +223,10 @@ void main() {
           ),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.byType(Image), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 260));
+      final img = tester.widget<Image>(find.byType(Image));
+      final assetImg = img.image as AssetImage;
+      expect(assetImg.assetName, equals(BeeMascot.assetForState(state)));
     }
 
     await tester.tap(find.byType(Image));

@@ -108,8 +108,7 @@ class LocalBillingRepository implements BillingRepository {
   Future<AnalysisResult?> pickAndAnalyzeCsv() async {
     final picked = await FilePicker.pickFile(
       dialogTitle: 'Выберите CSV детализацию оператора',
-      type: FileType.custom,
-      allowedExtensions: const <String>['csv', 'txt'],
+      type: FileType.any,
     );
     if (picked == null) {
       return null;

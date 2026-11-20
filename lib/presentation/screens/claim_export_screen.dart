@@ -105,6 +105,23 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                       ),
                     ),
                     SegmentedButton<AppLanguage>(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return AppTheme.beelineYellow;
+                          }
+                          return null;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return AppTheme.obsidianBlack;
+                          }
+                          return null;
+                        }),
+                        textStyle: const WidgetStatePropertyAll(
+                          TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
                       segments: const [
                         ButtonSegment(value: AppLanguage.ru, label: Text('RU')),
                         ButtonSegment(value: AppLanguage.ky, label: Text('KY')),
@@ -115,55 +132,72 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    SizedBox(
-                      width: 260,
-                      child: TextField(
-                        controller: _nameCtrl,
-                        decoration: InputDecoration(
-                          labelText: isRu ? 'ФИО абонента' : 'Абоненттин аты-жөнү',
-                        ),
-                        onChanged: (v) =>
-                            controller.updateSubscriberInfo(fullName: v),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 560;
+                    final nameField = TextField(
+                      controller: _nameCtrl,
+                      decoration: InputDecoration(
+                        labelText: isRu ? 'ФИО абонента' : 'Абоненттин аты-жөнү',
                       ),
-                    ),
-                    SizedBox(
-                      width: 200,
-                      child: TextField(
-                        controller: _phoneCtrl,
-                        decoration: InputDecoration(
-                          labelText: isRu ? 'Номер телефона' : 'Телефон номери',
-                        ),
-                        onChanged: (v) =>
-                            controller.updateSubscriberInfo(phone: v),
+                      onChanged: (v) =>
+                          controller.updateSubscriberInfo(fullName: v),
+                    );
+                    final phoneField = TextField(
+                      controller: _phoneCtrl,
+                      decoration: InputDecoration(
+                        labelText: isRu ? 'Номер телефона' : 'Телефон номери',
                       ),
-                    ),
-                    SizedBox(
-                      width: 140,
-                      child: TextField(
-                        controller: _operatorCtrl,
-                        decoration: InputDecoration(
-                          labelText: isRu ? 'Оператор' : 'Оператор',
-                        ),
-                        onChanged: (v) =>
-                            controller.updateSubscriberInfo(operatorName: v),
+                      onChanged: (v) =>
+                          controller.updateSubscriberInfo(phone: v),
+                    );
+                    final operatorField = TextField(
+                      controller: _operatorCtrl,
+                      decoration: InputDecoration(
+                        labelText: isRu ? 'Оператор' : 'Оператор',
                       ),
-                    ),
-                    SizedBox(
-                      width: 160,
-                      child: TextField(
-                        controller: _cityCtrl,
-                        decoration: InputDecoration(
-                          labelText: isRu ? 'Город' : 'Шаар',
-                        ),
-                        onChanged: (v) =>
-                            controller.updateSubscriberInfo(city: v),
+                      onChanged: (v) =>
+                          controller.updateSubscriberInfo(operatorName: v),
+                    );
+                    final cityField = TextField(
+                      controller: _cityCtrl,
+                      decoration: InputDecoration(
+                        labelText: isRu ? 'Город' : 'Шаар',
                       ),
-                    ),
-                  ],
+                      onChanged: (v) =>
+                          controller.updateSubscriberInfo(city: v),
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          nameField,
+                          const SizedBox(height: 12),
+                          phoneField,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(child: operatorField),
+                              const SizedBox(width: 12),
+                              Expanded(child: cityField),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        SizedBox(width: 260, child: nameField),
+                        SizedBox(width: 200, child: phoneField),
+                        SizedBox(width: 140, child: operatorField),
+                        SizedBox(width: 160, child: cityField),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

@@ -51,7 +51,7 @@ class DailySpendChart extends StatelessWidget {
     final chartMaxY = (maxSpend * 1.18).ceilToDouble();
 
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
-    final barWidth = days.length > 24 ? (isNarrow ? 6.0 : 8.0) : 14.0;
+    final barWidth = days.length > 24 ? (isNarrow ? 5.5 : 7.5) : 12.0;
     final labelStep = isNarrow
         ? (days.length > 20 ? 7 : 4)
         : (days.length > 20 ? 5 : (days.length > 10 ? 3 : 1));
@@ -90,8 +90,9 @@ class DailySpendChart extends StatelessWidget {
                 show: true,
                 drawVerticalLine: false,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
                   strokeWidth: 1,
+                  dashArray: const [4, 4],
                 ),
               ),
               borderData: FlBorderData(show: false),
@@ -128,6 +129,12 @@ class DailySpendChart extends StatelessWidget {
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx < 0 || idx >= days.length) {
+                        return const SizedBox.shrink();
+                      }
+                      // Hide second-to-last (and adjacent) labels so they never
+                      // collide with the final day label (e.g. 09-29 vs 09-30).
+                      if (idx != days.length - 1 &&
+                          (days.length - 1 - idx) <= 2) {
                         return const SizedBox.shrink();
                       }
                       if (idx % labelStep != 0 && idx != days.length - 1) {

@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 /// Beeline-inspired telecom super-app Material 3 themes (Dark default, Light,
 /// and High-Contrast Senior Mode).
 abstract final class AppTheme {
-  // Brand & Surface Palette
+  // Brand & Surface Palette (Minimalist Luxury Fintech)
   static const Color beelineYellow = Color(0xFFFFCC00);
   static const Color beelineYellowBright = Color(0xFFFFD400);
-  static const Color obsidianBlack = Color(0xFF0D0D0F);
-  static const Color carbonSurface = Color(0xFF18181C);
-  static const Color carbonBorder = Color(0xFF2A2A32);
+  static const Color obsidianBlack = Color(0xFF09090B);
+  static const Color carbonSurface = Color(0xFF16161A);
+  static const Color carbonBorder = Color(0x0FFFFFFF);
   static const Color comicOutline = Color(0xFF141418);
-  static const Color carbonElevated = Color(0xFF222228);
+  static const Color carbonElevated = Color(0xFF1E1E24);
+  static const Color carbonInput = Color(0xFF1C1C22);
   static const Color coolGray = Color(0xFF9E9EA9);
   static const Color offWhite = Color(0xFFF5F5F7);
 
-  // Semantic Status Colors
-  static const Color coralRed = Color(0xFFFF3B30);
-  static const Color electricGreen = Color(0xFF28CD41);
-  static const Color warmAmber = Color(0xFFFF9500);
+  // Semantic Status Colors (used strictly for subtle dots & numbers)
+  static const Color coralRed = Color(0xFFFF453A);
+  static const Color electricGreen = Color(0xFF30D158);
+  static const Color warmAmber = Color(0xFFFF9F0A);
 
   static ThemeData dark({bool seniorMode = false}) {
     const scheme = ColorScheme.dark(
@@ -74,7 +75,7 @@ abstract final class AppTheme {
     final cardBg = isDark ? carbonSurface : Colors.white;
     final borderColor = seniorMode
         ? (isDark ? Colors.white70 : obsidianBlack)
-        : (isDark ? carbonBorder : const Color(0xFFE5E5EC));
+        : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE5E5EC));
 
     final baseText = isDark
         ? Typography.material2021().white
@@ -127,10 +128,10 @@ abstract final class AppTheme {
         shadowColor: Colors.black.withValues(alpha: 0.06),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           side: BorderSide(
             color: borderColor,
-            width: seniorMode ? 2.0 : 1.0,
+            width: seniorMode ? 1.8 : 0.5,
           ),
         ),
       ),
@@ -143,14 +144,24 @@ abstract final class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: isDark ? carbonElevated : const Color(0xFFF0F0F4),
         selectedColor: beelineYellow,
-        labelStyle: TextStyle(
+        checkmarkColor: obsidianBlack,
+        iconTheme: IconThemeData(
           color: isDark ? Colors.white : obsidianBlack,
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
+          size: 16,
         ),
+        labelStyle: WidgetStateTextStyle.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            color: selected
+                ? obsidianBlack
+                : (isDark ? Colors.white : obsidianBlack),
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 13,
+          );
+        }),
         secondaryLabelStyle: const TextStyle(
           color: obsidianBlack,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           fontSize: 13,
         ),
         shape: RoundedRectangleBorder(
@@ -224,18 +235,18 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? carbonElevated : const Color(0xFFF0F0F4),
+        fillColor: isDark ? carbonInput : const Color(0xFFF0F0F4),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: beelineYellow, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: beelineYellow, width: 1.5),
         ),
       ),
     );

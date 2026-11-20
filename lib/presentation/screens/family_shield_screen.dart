@@ -8,7 +8,7 @@ import '../../domain/entities/family_member.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bee_mascot.dart';
-import '../widgets/kpi_card.dart';
+import '../widgets/operator_logo.dart';
 
 /// Multi-member Family Shield (`Семейный щит`) with cross-account
 /// `number_reputation` detection and «Режим для родителей / бабушки».
@@ -54,54 +54,100 @@ class FamilyShieldScreen extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final isCompact = w < 600;
-            final cols = w >= 840 ? 3 : (isCompact ? 2 : 1);
+            final cols = w >= 1000 ? 4 : 2;
             final cardW = (w - (cols - 1) * 10) / cols;
-            final fullW = isCompact ? w : cardW;
+            final isDark = theme.brightness == Brightness.dark;
+            final cardBg = isDark ? AppTheme.carbonSurface : Colors.white;
+            final borderColor = isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : const Color(0xFFE5E5EC);
+
+            Widget bentoStat({
+              required String label,
+              required String value,
+              required Color accent,
+            }) {
+              return SizedBox(
+                width: cardW,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          value,
+                          maxLines: 1,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
             return Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                SizedBox(
-                  width: cardW,
-                  child: KpiCard(
-                    title: isCompact
-                        ? (isRu ? 'Траты семьи' : 'Үй-бүлө')
-                        : (isRu ? 'Расходы всей семьи' : 'Үй-бүлөнүн чыгымы'),
-                    value: '${formatSom(controller.totalFamilySpendSom)} сом',
-                    subtitle: '${members.length} ${isRu ? "номера" : "номер"}',
-                    icon: Icons.family_restroom_rounded,
-                    accentColor: AppTheme.beelineYellow,
-                    compact: isCompact,
-                  ),
+                bentoStat(
+                  label: isRu ? 'Траты семьи' : 'Үй-бүлө',
+                  value: '${formatSom(controller.totalFamilySpendSom)} сом',
+                  accent: AppTheme.beelineYellow,
                 ),
-                SizedBox(
-                  width: cardW,
-                  child: KpiCard(
-                    title: isCompact
-                        ? (isRu ? 'Переплата' : 'Ашыкча')
-                        : (isRu ? 'Общая переплата' : 'Жалпы ашыкча төлөм'),
-                    value:
-                        '${formatSom(controller.totalFamilyOverchargeSom)} сом',
-                    subtitle: isRu ? 'К возврату семье' : 'Кайтаруу суммасы',
-                    icon: Icons.savings_rounded,
-                    accentColor: AppTheme.coralRed,
-                    compact: isCompact,
-                  ),
+                bentoStat(
+                  label: isRu ? 'Переплата' : 'Ашыкча',
+                  value:
+                      '${formatSom(controller.totalFamilyOverchargeSom)} сом',
+                  accent: AppTheme.coralRed,
                 ),
-                SizedBox(
-                  width: fullW,
-                  child: KpiCard(
-                    title: isRu ? 'Утечка за год' : 'Жылдык жоготуу',
-                    value:
-                        '${formatSom(controller.totalFamilyAnnualLeakSom)} сом',
-                    subtitle: isRu
-                        ? 'Подписки × 12 по семье'
-                        : 'Жазылуулар × 12',
-                    icon: Icons.shield_rounded,
-                    accentColor: AppTheme.warmAmber,
-                    compact: isCompact,
-                  ),
+                bentoStat(
+                  label: isRu ? 'Утечка / год' : 'Жылдык жоготуу',
+                  value:
+                      '${formatSom(controller.totalFamilyAnnualLeakSom)} сом',
+                  accent: AppTheme.warmAmber,
+                ),
+                bentoStat(
+                  label: isRu ? 'Защищено' : 'Корголгон',
+                  value: '${members.length} ${isRu ? "номеров" : "номер"}',
+                  accent: AppTheme.electricGreen,
                 ),
               ],
             );
@@ -152,52 +198,109 @@ class FamilyShieldScreen extends StatelessWidget {
                   width: isActive ? 2 : 1,
                 ),
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
                 onTap: () {
                   controller.selectMember(member.id);
                   controller.setTabIndex(0);
                 },
-                leading: CircleAvatar(
-                  backgroundColor: isActive
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.surfaceContainerHighest,
-                  foregroundColor: isActive
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.onSurface,
-                  child: Text(member.name.substring(0, 1)),
-                ),
-                title: Text(
-                  '${member.name} — ${member.roleLabel}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  res == null
-                      ? member.phone
-                      : '${member.phone} (${member.operatorName}) · '
-                          '${formatSom(res.report.totalSpendSom)} сом · '
-                          '${isRu ? "переплата" : "ашыкча"} ${formatSom(over)} сом',
-                ),
-                trailing: Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (res != null)
-                      Chip(
-                        label: Text(
-                          '${res.anomalies.length} ${isRu ? "аном." : "аном."}',
-                        ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: isActive
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.surfaceContainerHighest,
+                            foregroundColor: isActive
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface,
+                            child: Text(
+                              member.name.substring(0, 1),
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${member.name} — ${member.roleLabel}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          if (res != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: theme.colorScheme.outlineVariant,
+                                ),
+                              ),
+                              child: Text(
+                                '${res.anomalies.length} ${isRu ? "аном." : "аном."}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: isRu ? 'Загрузить CSV' : 'CSV жүктөө',
+                            onPressed: () =>
+                                controller.loadCustomCsvForMember(member.id),
+                            icon: const Icon(Icons.upload_file_rounded, size: 20),
+                          ),
+                        ],
                       ),
-                    IconButton(
-                      tooltip: isRu ? 'Загрузить CSV' : 'CSV жүктөө',
-                      onPressed: () =>
-                          controller.loadCustomCsvForMember(member.id),
-                      icon: const Icon(Icons.upload_file_rounded),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          OperatorLogo(
+                            operatorName: member.operatorName,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            member.phone,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (res != null)
+                            Expanded(
+                              child: Text(
+                                '${formatSom(res.report.totalSpendSom)} сом · '
+                                '${isRu ? "переплата" : "ашыкча"} ${formatSom(over)} сом',
+                                textAlign: TextAlign.end,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: over > Decimal.zero
+                                      ? AppTheme.coralRed
+                                      : AppTheme.electricGreen,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -215,47 +318,48 @@ class FamilyShieldScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Card(
-        color: AppTheme.coralRed.withValues(alpha: 0.10),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              Row(
                 children: [
-                  const Icon(
-                    Icons.gpp_bad_rounded,
-                    color: AppTheme.coralRed,
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.coralRed,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${isRu ? "Короткий номер" : "Кыска номер"} ${flag.shortCode}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
                   ),
                   Text(
-                    '${isRu ? "Короткий номер" : "Кыска номер"} ${flag.shortCode}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.coralRed,
-                        ),
-                  ),
-                  Chip(
-                    label: Text(
-                      '-${formatSom(flag.totalFamilyLossSom)} сом',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    '-${formatSom(flag.totalFamilyLossSom)} сом',
+                    style: const TextStyle(
+                      color: AppTheme.coralRed,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(isRu ? flag.explanationRu : flag.explanationKy),
               const SizedBox(height: 10),
               BeeMascot(
                 state: MascotState.alert,
                 compact: true,
-                size: 42,
+                size: 58,
                 language: controller.language,
-                message: isRu
-                    ? 'Тревога! Короткий номер ${flag.shortCode} списывает деньги сразу у ${flag.affectedMemberNames.length} членов семьи.'
-                    : 'Кооптуу! ${flag.shortCode} кыска номери үй-бүлөнүн ${flag.affectedMemberNames.length} мүчөсүнөн акча алууда.',
+                message: isRu ? flag.explanationRu : flag.explanationKy,
               ),
               const SizedBox(height: 10),
               Wrap(

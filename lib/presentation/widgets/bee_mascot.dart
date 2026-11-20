@@ -45,6 +45,28 @@ class BeeMascot extends StatefulWidget {
   final AppLanguage language;
   final VoidCallback? onTap;
 
+  static const Map<MascotState, String> _assetByState = <MascotState, String>{
+    MascotState.loader: 'assets/mascot/bee_loader.png',
+    MascotState.alert: 'assets/mascot/bee_alert.png',
+    MascotState.happy: 'assets/mascot/bee_happy.png',
+    MascotState.detective: 'assets/mascot/bee_detective.png',
+    MascotState.seniorHelper: 'assets/mascot/bee_senior.png',
+  };
+
+  /// All mascot PNG asset paths for startup precaching.
+  static Iterable<String> get allAssetPaths => _assetByState.values;
+
+  /// Returns the dedicated PNG asset path for [state].
+  static String assetForState(MascotState state) =>
+      _assetByState[state] ?? 'assets/mascot/bee_base.png';
+
+  /// Precaches all 5 mascot illustrations so state & tab switches are instant.
+  static Future<void> precacheAll(BuildContext context) async {
+    for (final path in allAssetPaths) {
+      await precacheImage(AssetImage(path), context);
+    }
+  }
+
   /// Selects the best reactive mascot state & dynamic explanation for an [AnalysisResult].
   static ({MascotState state, String message, List<String> tips}) fromAnalysis({
     required AnalysisResult result,
@@ -253,16 +275,6 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
     };
   }
 
-  Color _accentForState() {
-    return switch (widget.state) {
-      MascotState.loader => AppTheme.beelineYellow,
-      MascotState.alert => AppTheme.coralRed,
-      MascotState.happy => AppTheme.electricGreen,
-      MascotState.detective => AppTheme.beelineYellow,
-      MascotState.seniorHelper => AppTheme.beelineYellow,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final msg = _resolvedMessage();
@@ -310,116 +322,45 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
   }
 
   Widget _buildAnimatedCharacter(double charSize) {
-    final accent = _accentForState();
+    final assetPath = BeeMascot.assetForState(widget.state);
     return GestureDetector(
       onTap: _handleTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: charSize + 18,
-        height: charSize + 18,
+        width: charSize + 8,
+        height: charSize + 8,
         child: AnimatedBuilder(
           animation: Listenable.merge([
             _bobController,
             _wingController,
-            _radarController,
             _tapBounceController,
           ]),
           builder: (context, child) {
-            final bobY = math.sin(_bobController.value * math.pi) * 4.0 - 2.0;
-            final flutterTilt =
+            final bobY = math.sin(_bobController.value * math.pi) * 3.5 - 1.5;
+            final breathScale = 1.0 +
                 (_wingController.value - 0.5) *
-                (widget.state == MascotState.loader ? 0.08 : 0.04);
+                    (widget.state == MascotState.loader ? 0.04 : 0.02);
             final bounceScale = 1.0 +
                 math.sin(_tapBounceController.value * math.pi) * 0.14;
 
-            return Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                // State-specific comic aura / radar ring
-                if (widget.state == MascotState.loader)
-                  Transform.rotate(
-                    angle: _radarController.value * 2 * math.pi,
-                    child: CustomPaint(
-                      size: Size.square(charSize + 14),
-                      painter: _RadarRingPainter(
-                        accent: AppTheme.beelineYellow,
-                        outline: AppTheme.comicOutline,
-                      ),
-                    ),
-                  )
-                else if (widget.state == MascotState.alert)
-                  Container(
-                    width: charSize + 8 + (_radarController.value * 8),
-                    height: charSize + 8 + (_radarController.value * 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.coralRed.withValues(
-                        alpha: 0.24 * (1.0 - _radarController.value * 0.6),
-                      ),
-                      border: Border.all(
-                        color: AppTheme.coralRed.withValues(alpha: 0.55),
-                        width: 2,
-                      ),
-                    ),
-                  )
-                else if (widget.state == MascotState.happy)
-                  CustomPaint(
-                    size: Size.square(charSize + 14),
-                    painter: _SparkleAuraPainter(
-                      progress: _radarController.value,
-                    ),
-                  )
-                else if (widget.state == MascotState.seniorHelper)
-                  Container(
-                    width: charSize + 8,
-                    height: charSize + 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.beelineYellow.withValues(alpha: 0.20),
-                      border: Border.all(
-                        color: AppTheme.beelineYellow,
-                        width: 2.5,
-                      ),
-                    ),
-                  ),
-
-                // Mascot artwork with bobbing, wing flutter, and tap bounce
-                Transform.translate(
-                  offset: Offset(0, bobY),
-                  child: Transform.rotate(
-                    angle: flutterTilt,
-                    child: Transform.scale(
-                      scale: bounceScale,
-                      child: child,
-                    ),
-                  ),
-                ),
-
-                // Expressive comic-outlined corner badge
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: _buildStateBadge(accent, charSize),
-                ),
-              ],
+            return Transform.translate(
+              offset: Offset(0, bobY),
+              child: Transform.scale(
+                scale: breathScale * bounceScale,
+                child: child,
+              ),
             );
           },
-          child: Container(
-            width: charSize,
-            height: charSize,
-            padding: EdgeInsets.all((charSize * 0.08).clamp(3.0, 7.0)),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.beelineYellow.withValues(alpha: 0.14),
-              border: Border.all(
-                color: AppTheme.beelineYellow.withValues(alpha: 0.38),
-                width: 1.5,
-              ),
-            ),
-            child: ClipOval(
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 240),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
               child: Image.asset(
-                'assets/mascot/bee_base.png',
+                assetPath,
+                key: ValueKey<String>(assetPath),
+                width: charSize,
+                height: charSize,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.medium,
               ),
@@ -427,57 +368,6 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStateBadge(Color accent, double charSize) {
-    final badgeSize = (charSize * 0.34).clamp(18.0, 34.0);
-    final iconSize = (badgeSize * 0.58).clamp(11.0, 20.0);
-
-    final (IconData icon, Color bg, Color fg) = switch (widget.state) {
-      MascotState.loader => (
-          Icons.radar_rounded,
-          AppTheme.beelineYellow,
-          AppTheme.comicOutline,
-        ),
-      MascotState.alert => (
-          Icons.gpp_maybe_rounded,
-          AppTheme.coralRed,
-          Colors.white,
-        ),
-      MascotState.happy => (
-          Icons.verified_user_rounded,
-          AppTheme.electricGreen,
-          AppTheme.comicOutline,
-        ),
-      MascotState.detective => (
-          Icons.search_rounded,
-          AppTheme.beelineYellow,
-          AppTheme.comicOutline,
-        ),
-      MascotState.seniorHelper => (
-          Icons.favorite_rounded,
-          AppTheme.beelineYellow,
-          AppTheme.comicOutline,
-        ),
-    };
-
-    return Container(
-      width: badgeSize,
-      height: badgeSize,
-      decoration: BoxDecoration(
-        color: bg,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppTheme.comicOutline, width: 2.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x55000000),
-            offset: Offset(1, 2),
-            blurRadius: 2,
-          ),
-        ],
-      ),
-      child: Icon(icon, size: iconSize, color: fg),
     );
   }
 
@@ -489,38 +379,30 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isSenior = widget.state == MascotState.seniorHelper;
-    final borderColor = switch (widget.state) {
-      MascotState.alert => AppTheme.coralRed,
-      MascotState.happy => AppTheme.electricGreen,
-      _ => AppTheme.beelineYellow,
-    };
 
     final bgColor = isSenior
         ? AppTheme.beelineYellow
-        : (isDark ? AppTheme.carbonSurface : Colors.white);
+        : (isDark ? const Color(0xFF1C1C22) : const Color(0xFFF3F3F7));
     final textColor = isSenior
-        ? AppTheme.comicOutline
+        ? AppTheme.obsidianBlack
         : (isDark ? Colors.white : AppTheme.obsidianBlack);
 
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 12 : 14,
-        vertical: compact ? 8 : 11,
+        vertical: compact ? 9 : 11,
       ),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(compact ? 14 : 18),
+        borderRadius: BorderRadius.circular(compact ? 16 : 18),
         border: Border.all(
-          color: isSenior ? AppTheme.comicOutline : borderColor,
-          width: isSenior ? 2.5 : 1.8,
+          color: isSenior
+              ? Colors.transparent
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFFE5E5EC)),
+          width: 0.5,
         ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            offset: Offset(0, 4),
-            blurRadius: 10,
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,82 +444,4 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
       ),
     );
   }
-}
-
-class _RadarRingPainter extends CustomPainter {
-  const _RadarRingPainter({
-    required this.accent,
-    required this.outline,
-  });
-
-  final Color accent;
-  final Color outline;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 3;
-
-    final trackPaint = Paint()
-      ..color = outline.withValues(alpha: 0.45)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-    canvas.drawCircle(center, radius, trackPaint);
-
-    final arcPaint = Paint()
-      ..color = accent
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0,
-      math.pi * 0.72,
-      false,
-      arcPaint,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      math.pi,
-      math.pi * 0.45,
-      false,
-      arcPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RadarRingPainter oldDelegate) =>
-      oldDelegate.accent != accent || oldDelegate.outline != outline;
-}
-
-class _SparkleAuraPainter extends CustomPainter {
-  const _SparkleAuraPainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 4;
-    final haloPaint = Paint()
-      ..color = AppTheme.electricGreen.withValues(alpha: 0.16)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius - 2, haloPaint);
-
-    final starPaint = Paint()
-      ..color = AppTheme.beelineYellow
-      ..style = PaintingStyle.fill;
-
-    for (var i = 0; i < 4; i++) {
-      final angle = progress * 2 * math.pi + i * (math.pi / 2);
-      final dx = center.dx + math.cos(angle) * radius;
-      final dy = center.dy + math.sin(angle) * radius;
-      canvas.drawCircle(Offset(dx, dy), 3.2, starPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SparkleAuraPainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }

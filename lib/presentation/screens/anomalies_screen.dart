@@ -43,18 +43,42 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
         : result.anomalies.where((a) => a.type == _selectedFilter).toList();
 
     final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final allSelected = _selectedFilter == null;
     final filterChips = <Widget>[
       FilterChip(
-        selected: _selectedFilter == null,
-        label: Text('${isRu ? "Все" : "Баары"} (${result.anomalies.length})'),
+        selected: allSelected,
+        selectedColor: AppTheme.beelineYellow,
+        checkmarkColor: AppTheme.obsidianBlack,
+        labelStyle: TextStyle(
+          color: allSelected ? AppTheme.obsidianBlack : null,
+          fontWeight: FontWeight.w700,
+        ),
+        label: Text(
+          '${isRu ? "Все" : "Баары"} (${result.anomalies.length})',
+          style: TextStyle(
+            color: allSelected ? AppTheme.obsidianBlack : null,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         onSelected: (_) => setState(() => _selectedFilter = null),
       ),
       ...AnomalyType.values.map((type) {
         final count = result.anomalies.where((a) => a.type == type).length;
+        final isSelected = _selectedFilter == type;
         return FilterChip(
-          selected: _selectedFilter == type,
+          selected: isSelected,
+          selectedColor: AppTheme.beelineYellow,
+          checkmarkColor: AppTheme.obsidianBlack,
+          labelStyle: TextStyle(
+            color: isSelected ? AppTheme.obsidianBlack : null,
+            fontWeight: FontWeight.w700,
+          ),
           label: Text(
             '${AppStrings.anomalyTitle(type, controller.language)} ($count)',
+            style: TextStyle(
+              color: isSelected ? AppTheme.obsidianBlack : null,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           onSelected: (_) => setState(() {
             _selectedFilter = _selectedFilter == type ? null : type;
@@ -72,13 +96,44 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isRu
-                      ? 'Фильтр по типу аномалии (${filtered.length}/${result.anomalies.length})'
-                      : 'Аномалия түрү боюнча чыпка (${filtered.length}/${result.anomalies.length})',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isRu
+                            ? 'Фильтр по типу (${filtered.length}/${result.anomalies.length})'
+                            : 'Аномалия чыпкасы (${filtered.length}/${result.anomalies.length})',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.carbonElevated,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () => _showSmsInterceptSheet(context, isRu),
+                      icon: const Icon(
+                        Icons.sms_failed_rounded,
+                        size: 15,
+                        color: AppTheme.coralRed,
+                      ),
+                      label: Text(
+                        isRu ? 'Тест перехвата SMS' : 'SMS кармоо тести',
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 if (isMobile)
@@ -149,53 +204,48 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 alignment: WrapAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      AppStrings.anomalyTitle(
-                        anomaly.type,
-                        controller.language,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: accent,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                      style: TextStyle(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          AppStrings.anomalyTitle(
+                            anomaly.type,
+                            controller.language,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                   Text(
                     anomaly.datetime,
-                    style: theme.textTheme.labelMedium,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSpike
-                          ? theme.colorScheme.secondaryContainer
-                          : AppTheme.electricGreen.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      isSpike
-                          ? '${isRu ? "Трата за день" : "Күндүк чыгым"}: ${formatSom(anomaly.costSom)} сом'
-                          : '${isRu ? "Возврат" : "Кайтаруу"}: ${formatSom(anomaly.overchargeSom)} сом',
-                      style: TextStyle(
-                        color: isSpike
-                            ? theme.colorScheme.onSecondaryContainer
-                            : AppTheme.electricGreen,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
+                  Text(
+                    isSpike
+                        ? '-${formatSom(anomaly.costSom)} сом'
+                        : '+${formatSom(anomaly.overchargeSom)} сом',
+                    style: TextStyle(
+                      color: isSpike ? AppTheme.coralRed : AppTheme.electricGreen,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
@@ -203,7 +253,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
               const SizedBox(height: 10),
               if (anomaly.number != null && anomaly.number!.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     '${isRu ? "Номер" : "Номер"}: ${anomaly.number}'
                     '${anomaly.rowNumber != null ? " · ${isRu ? "строка" : "сап"} #${anomaly.rowNumber}" : ""}',
@@ -212,21 +262,16 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                     ),
                   ),
                 ),
-              Text(
-                isRu ? anomaly.explanationRu : anomaly.explanationKy,
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-              ),
-              const SizedBox(height: 10),
               BeeMascot(
                 state: anomaly.type == AnomalyType.duplicateCharge
                     ? MascotState.detective
                     : MascotState.alert,
                 compact: true,
-                size: 40,
+                size: 58,
                 language: controller.language,
-                message: _miniReactionText(anomaly, isRu),
+                message: isRu ? anomaly.explanationRu : anomaly.explanationKy,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 10,
                 runSpacing: 8,
@@ -289,8 +334,20 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   if (!isSpike && anomaly.overchargeSom > Decimal.zero)
                     FilterChip(
                       selected: isSelectedForClaim,
+                      selectedColor: AppTheme.beelineYellow,
+                      checkmarkColor: AppTheme.obsidianBlack,
+                      labelStyle: TextStyle(
+                        color: isSelectedForClaim ? AppTheme.obsidianBlack : null,
+                        fontWeight: FontWeight.w700,
+                      ),
                       label: Text(
                         isRu ? 'Включить в заявление' : 'Арызга кошуу',
+                        style: TextStyle(
+                          color: isSelectedForClaim
+                              ? AppTheme.obsidianBlack
+                              : null,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       onSelected: (_) =>
                           controller.toggleClaimAnomaly(anomaly.id),
@@ -304,26 +361,154 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
     );
   }
 
-  String _miniReactionText(Anomaly anomaly, bool isRu) {
-    final numLabel = (anomaly.number != null && anomaly.number!.isNotEmpty)
-        ? anomaly.number!
-        : '';
-    return switch (anomaly.type) {
-      AnomalyType.newSubscription => isRu
-          ? 'Короткий номер $numLabel подключил подписку — отправьте СТОП для отключения.'
-          : '$numLabel кыска номери жазылуу кошту — өчүрүү үчүн СТОП жөнөтүңүз.',
-      AnomalyType.nightCharge => isRu
-          ? 'Ночное списание с номера ${numLabel.isEmpty ? "контент-услуги" : numLabel} — проверьте, заказывали ли вы его.'
-          : 'Түнкү списание (${numLabel.isEmpty ? "контент" : numLabel}) — сиз коштуңуз беле?',
-      AnomalyType.duplicateCharge => isRu
-          ? 'Повторное списание за 60 секунд — явная ошибка биллинга к возврату.'
-          : '60 секунд ичинде кайталанган списание — кайтарууга негиз бар.',
-      AnomalyType.internationalRate => isRu
-          ? 'Дорогой международный вызов на $numLabel (> 20 сом/мин) — переплата ${formatSom(anomaly.overchargeSom)} сом.'
-          : '$numLabel номерине кымбат эл аралык чалуу (> 20 сом/мүн).',
-      AnomalyType.daySpike => isRu
-          ? 'Аномальный всплеск расходов за день — проверьте детализацию за эту дату.'
-          : 'Бир күндүк чыгым кескин өстү — ушул күндүн саптарын текшериңиз.',
-    };
+  Future<void> _showSmsInterceptSheet(BuildContext context, bool isRu) async {
+    var neutralized = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.carbonSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  24 + MediaQuery.viewInsetsOf(ctx).bottom,
+                ),
+                child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Icon(
+                        neutralized
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.bolt_rounded,
+                        color: neutralized
+                            ? AppTheme.electricGreen
+                            : AppTheme.coralRed,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          neutralized
+                              ? (isRu
+                                  ? 'Угроза заблокирована!'
+                                  : 'Коркунуч бөгөттөлдү!')
+                              : (isRu
+                                  ? 'Beeline Guard · Перехват SMS'
+                                  : 'Beeline Guard · SMS кармоо'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  BeeMascot(
+                    state: neutralized ? MascotState.happy : MascotState.alert,
+                    size: 72,
+                    language: widget.controller.language,
+                    message: neutralized
+                        ? (isRu
+                            ? 'Отлично! Команда СТОП отправлена на 7575, вы сэкономили 5 475 сом/год.'
+                            : 'Азаматсыз! 7575 номерине СТОП жөнөтүлдү, жылына 5 475 сом үнөмдөлдү.')
+                        : (isRu
+                            ? 'Осторожно! Прямо сейчас вам пытаются подключить платную подписку на 5 475 сом/год!'
+                            : 'Абайлаңыз! Азыр сизге жылына 5 475 сомдук акы төлөнүүчү жазылуу кошулууда!'),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.carbonInput,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isRu
+                              ? 'От 7575: Подписка «Гороскоп VIP» активирована. Списание 15.00 сом/сутки.'
+                              : '7575тен: «Гороскоп VIP» жазылуусу кошулду. Күнүнө 15.00 сом алынат.',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isRu
+                              ? 'Потенциальная потеря: 5 475 сом/год'
+                              : 'Жылдык жоготуу: 5 475 сом/жыл',
+                          style: TextStyle(
+                            color: neutralized
+                                ? AppTheme.electricGreen
+                                : AppTheme.coralRed,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (!neutralized)
+                    FilledButton.icon(
+                      onPressed: () async {
+                        setSheetState(() => neutralized = true);
+                        await Clipboard.setData(const ClipboardData(text: 'СТОП'));
+                      },
+                      icon: const Icon(Icons.block_rounded),
+                      label: Text(
+                        isRu
+                            ? 'Заблокировать и отправить СТОП'
+                            : 'Бөгөттөө жана СТОП жөнөтүү',
+                      ),
+                    )
+                  else
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.electricGreen,
+                        foregroundColor: AppTheme.obsidianBlack,
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.check_circle_rounded),
+                      label: Text(isRu ? 'Готово' : 'Даяр'),
+                    ),
+                ],
+              ),
+            ),
+            );
+          },
+        );
+      },
+    );
   }
 }

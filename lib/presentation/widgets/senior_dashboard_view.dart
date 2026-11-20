@@ -68,8 +68,8 @@ class SeniorDashboardView extends StatelessWidget {
                   children: [
                     Icon(
                       hasOvercharge
-                          ? Icons.warning_amber_rounded
-                          : Icons.verified_user_rounded,
+                          ? Icons.error_outline_rounded
+                          : Icons.check_circle_outline_rounded,
                       size: 36,
                       color: hasOvercharge
                           ? AppTheme.coralRed
