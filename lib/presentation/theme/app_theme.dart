@@ -9,6 +9,7 @@ abstract final class AppTheme {
   static const Color obsidianBlack = Color(0xFF0D0D0F);
   static const Color carbonSurface = Color(0xFF18181C);
   static const Color carbonBorder = Color(0xFF2A2A32);
+  static const Color comicOutline = Color(0xFF141418);
   static const Color carbonElevated = Color(0xFF222228);
   static const Color coolGray = Color(0xFF9E9EA9);
   static const Color offWhite = Color(0xFFF5F5F7);

@@ -7,6 +7,7 @@ import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/anomaly.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bee_mascot.dart';
 
 /// Anomaly inspector (`Аномалии`): filterable by type with explanations,
 /// refund badges, and 1-tap copyable USSD/SMS unsubscribe hints.
@@ -41,12 +42,33 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
         ? result.anomalies
         : result.anomalies.where((a) => a.type == _selectedFilter).toList();
 
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final filterChips = <Widget>[
+      FilterChip(
+        selected: _selectedFilter == null,
+        label: Text('${isRu ? "Все" : "Баары"} (${result.anomalies.length})'),
+        onSelected: (_) => setState(() => _selectedFilter = null),
+      ),
+      ...AnomalyType.values.map((type) {
+        final count = result.anomalies.where((a) => a.type == type).length;
+        return FilterChip(
+          selected: _selectedFilter == type,
+          label: Text(
+            '${AppStrings.anomalyTitle(type, controller.language)} ($count)',
+          ),
+          onSelected: (_) => setState(() {
+            _selectedFilter = _selectedFilter == type ? null : type;
+          }),
+        );
+      }),
+    ];
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       children: [
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isMobile ? 12 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -59,31 +81,24 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                       ),
                 ),
                 const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilterChip(
-                      selected: _selectedFilter == null,
-                      label: Text('${isRu ? "Все" : "Баары"} (${result.anomalies.length})'),
-                      onSelected: (_) => setState(() => _selectedFilter = null),
+                if (isMobile)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: filterChips
+                          .map((c) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: c,
+                              ))
+                          .toList(),
                     ),
-                    ...AnomalyType.values.map((type) {
-                      final count =
-                          result.anomalies.where((a) => a.type == type).length;
-                      return FilterChip(
-                        selected: _selectedFilter == type,
-                        label: Text(
-                          '${AppStrings.anomalyTitle(type, controller.language)} ($count)',
-                        ),
-                        onSelected: (_) => setState(() {
-                          _selectedFilter =
-                              _selectedFilter == type ? null : type;
-                        }),
-                      );
-                    }),
-                  ],
-                ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: filterChips,
+                  ),
               ],
             ),
           ),
@@ -134,36 +149,30 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 alignment: WrapAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          AppStrings.anomalyTitle(
-                            anomaly.type,
-                            controller.language,
-                          ),
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      AppStrings.anomalyTitle(
+                        anomaly.type,
+                        controller.language,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        anomaly.datetime,
-                        style: theme.textTheme.labelMedium,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
                       ),
-                    ],
+                    ),
+                  ),
+                  Text(
+                    anomaly.datetime,
+                    style: theme.textTheme.labelMedium,
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -207,6 +216,16 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                 isRu ? anomaly.explanationRu : anomaly.explanationKy,
                 style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
               ),
+              const SizedBox(height: 10),
+              BeeMascot(
+                state: anomaly.type == AnomalyType.duplicateCharge
+                    ? MascotState.detective
+                    : MascotState.alert,
+                compact: true,
+                size: 40,
+                language: controller.language,
+                message: _miniReactionText(anomaly, isRu),
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
@@ -214,10 +233,9 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (anomaly.ussdHint != null)
-                    ActionChip(
-                      avatar: const Icon(Icons.copy_rounded, size: 16),
-                      label: Text(anomaly.ussdHint!),
-                      onPressed: () async {
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () async {
                         final copyPayload =
                             anomaly.type == AnomalyType.newSubscription &&
                                     anomaly.number != null
@@ -236,6 +254,37 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                           );
                         }
                       },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.copy_rounded, size: 15),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                anomaly.ussdHint!,
+                                softWrap: true,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   if (!isSpike && anomaly.overchargeSom > Decimal.zero)
                     FilterChip(
@@ -253,5 +302,28 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
         ),
       ),
     );
+  }
+
+  String _miniReactionText(Anomaly anomaly, bool isRu) {
+    final numLabel = (anomaly.number != null && anomaly.number!.isNotEmpty)
+        ? anomaly.number!
+        : '';
+    return switch (anomaly.type) {
+      AnomalyType.newSubscription => isRu
+          ? 'Короткий номер $numLabel подключил подписку — отправьте СТОП для отключения.'
+          : '$numLabel кыска номери жазылуу кошту — өчүрүү үчүн СТОП жөнөтүңүз.',
+      AnomalyType.nightCharge => isRu
+          ? 'Ночное списание с номера ${numLabel.isEmpty ? "контент-услуги" : numLabel} — проверьте, заказывали ли вы его.'
+          : 'Түнкү списание (${numLabel.isEmpty ? "контент" : numLabel}) — сиз коштуңуз беле?',
+      AnomalyType.duplicateCharge => isRu
+          ? 'Повторное списание за 60 секунд — явная ошибка биллинга к возврату.'
+          : '60 секунд ичинде кайталанган списание — кайтарууга негиз бар.',
+      AnomalyType.internationalRate => isRu
+          ? 'Дорогой международный вызов на $numLabel (> 20 сом/мин) — переплата ${formatSom(anomaly.overchargeSom)} сом.'
+          : '$numLabel номерине кымбат эл аралык чалуу (> 20 сом/мүн).',
+      AnomalyType.daySpike => isRu
+          ? 'Аномальный всплеск расходов за день — проверьте детализацию за эту дату.'
+          : 'Бир күндүк чыгым кескин өстү — ушул күндүн саптарын текшериңиз.',
+    };
   }
 }

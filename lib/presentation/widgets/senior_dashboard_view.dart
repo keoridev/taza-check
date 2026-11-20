@@ -8,6 +8,7 @@ import '../../domain/entities/analysis_result.dart';
 import '../../domain/entities/anomaly.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import 'bee_mascot.dart';
 
 /// High-contrast, large-font simplified dashboard for parents & grandparents.
 class SeniorDashboardView extends StatelessWidget {
@@ -31,6 +32,29 @@ class SeniorDashboardView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        Card(
+          color: AppTheme.beelineYellow.withValues(alpha: 0.14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: const BorderSide(color: AppTheme.beelineYellow, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: BeeMascot(
+              state: MascotState.seniorHelper,
+              size: 100,
+              language: controller.language,
+              message: hasOvercharge
+                  ? (isRu
+                      ? 'Не переживайте! Я проверил ваш баланс и нашёл, как отключить платные рассылки одной кнопкой.'
+                      : 'Кабатыр болбоңуз! Балансыңызды текшердим, ашыкча төлөмдөрдү бир баскыч менен өчүрөбүз.')
+                  : (isRu
+                      ? 'Всё в порядке! Я проверил все списания — лишних подписок и скрытых платежей нет.'
+                      : 'Баары жайында! Бардык списаниелер таза, жашыруун жазылуулар жок.'),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Card(
           color: hasOvercharge
               ? AppTheme.coralRed.withValues(alpha: 0.14)

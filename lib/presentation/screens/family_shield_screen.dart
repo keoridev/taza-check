@@ -7,6 +7,7 @@ import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/family_member.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bee_mascot.dart';
 import '../widgets/kpi_card.dart';
 
 /// Multi-member Family Shield (`Семейный щит`) with cross-account
@@ -53,35 +54,43 @@ class FamilyShieldScreen extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final cols = w >= 840 ? 3 : 1;
-            final cardW = (w - (cols - 1) * 12) / cols;
+            final isCompact = w < 600;
+            final cols = w >= 840 ? 3 : (isCompact ? 2 : 1);
+            final cardW = (w - (cols - 1) * 10) / cols;
+            final fullW = isCompact ? w : cardW;
             return Wrap(
-              spacing: 12,
-              runSpacing: 12,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 SizedBox(
                   width: cardW,
                   child: KpiCard(
-                    title: isRu ? 'Расходы всей семьи' : 'Үй-бүлөнүн чыгымы',
+                    title: isCompact
+                        ? (isRu ? 'Траты семьи' : 'Үй-бүлө')
+                        : (isRu ? 'Расходы всей семьи' : 'Үй-бүлөнүн чыгымы'),
                     value: '${formatSom(controller.totalFamilySpendSom)} сом',
                     subtitle: '${members.length} ${isRu ? "номера" : "номер"}',
                     icon: Icons.family_restroom_rounded,
                     accentColor: AppTheme.beelineYellow,
+                    compact: isCompact,
                   ),
                 ),
                 SizedBox(
                   width: cardW,
                   child: KpiCard(
-                    title: isRu ? 'Общая переплата' : 'Жалпы ашыкча төлөм',
+                    title: isCompact
+                        ? (isRu ? 'Переплата' : 'Ашыкча')
+                        : (isRu ? 'Общая переплата' : 'Жалпы ашыкча төлөм'),
                     value:
                         '${formatSom(controller.totalFamilyOverchargeSom)} сом',
                     subtitle: isRu ? 'К возврату семье' : 'Кайтаруу суммасы',
                     icon: Icons.savings_rounded,
                     accentColor: AppTheme.coralRed,
+                    compact: isCompact,
                   ),
                 ),
                 SizedBox(
-                  width: cardW,
+                  width: fullW,
                   child: KpiCard(
                     title: isRu ? 'Утечка за год' : 'Жылдык жоготуу',
                     value:
@@ -91,6 +100,7 @@ class FamilyShieldScreen extends StatelessWidget {
                         : 'Жазылуулар × 12',
                     icon: Icons.shield_rounded,
                     accentColor: AppTheme.warmAmber,
+                    compact: isCompact,
                   ),
                 ),
               ],
@@ -99,9 +109,7 @@ class FamilyShieldScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          isRu
-              ? 'Кросс-аккаунт угрозы (`number_reputation`)'
-              : 'Үй-бүлөлүк коркунучтар (`number_reputation`)',
+          isRu ? 'Кросс-аккаунт угрозы' : 'Үй-бүлөлүк коркунучтар',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -240,6 +248,16 @@ class FamilyShieldScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(isRu ? flag.explanationRu : flag.explanationKy),
               const SizedBox(height: 10),
+              BeeMascot(
+                state: MascotState.alert,
+                compact: true,
+                size: 42,
+                language: controller.language,
+                message: isRu
+                    ? 'Тревога! Короткий номер ${flag.shortCode} списывает деньги сразу у ${flag.affectedMemberNames.length} членов семьи.'
+                    : 'Кооптуу! ${flag.shortCode} кыска номери үй-бүлөнүн ${flag.affectedMemberNames.length} мүчөсүнөн акча алууда.',
+              ),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -250,10 +268,9 @@ class FamilyShieldScreen extends StatelessWidget {
                       label: Text(name),
                     ),
                   ),
-                  ActionChip(
-                    avatar: const Icon(Icons.copy_rounded, size: 16),
-                    label: Text(flag.ussdHint),
-                    onPressed: () async {
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
                       await Clipboard.setData(const ClipboardData(text: 'СТОП'));
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -267,6 +284,37 @@ class FamilyShieldScreen extends StatelessWidget {
                         );
                       }
                     },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.copy_rounded, size: 15),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              flag.ussdHint,
+                              softWrap: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

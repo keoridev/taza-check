@@ -50,8 +50,11 @@ class DailySpendChart extends StatelessWidget {
     }
     final chartMaxY = (maxSpend * 1.18).ceilToDouble();
 
-    final barWidth = days.length > 24 ? 8.0 : 14.0;
-    final labelStep = days.length > 20 ? 5 : (days.length > 10 ? 3 : 1);
+    final isNarrow = MediaQuery.sizeOf(context).width < 600;
+    final barWidth = days.length > 24 ? (isNarrow ? 6.0 : 8.0) : 14.0;
+    final labelStep = isNarrow
+        ? (days.length > 20 ? 7 : 4)
+        : (days.length > 20 ? 5 : (days.length > 10 ? 3 : 1));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,9 +78,9 @@ class DailySpendChart extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 240,
+          height: isNarrow ? 190 : 240,
           child: BarChart(
             BarChartData(
               maxY: chartMaxY,

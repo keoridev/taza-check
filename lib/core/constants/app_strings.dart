@@ -83,4 +83,20 @@ abstract final class AppStrings {
           'Тариф тандоо',
           'Арыз жана экспорт',
         ];
+
+  static List<String> compactNavLabels(AppLanguage lang) => lang == AppLanguage.ru
+      ? const [
+          'Обзор',
+          'Аномалии',
+          'Семья',
+          'Тарифы',
+          'Заявление',
+        ]
+      : const [
+          'Сереп',
+          'Аномалия',
+          'Үй-бүлө',
+          'Тариф',
+          'Арыз',
+        ];
 }

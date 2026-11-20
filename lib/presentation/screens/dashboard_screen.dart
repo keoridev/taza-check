@@ -5,17 +5,18 @@ import '../../core/constants/app_strings.dart';
 import '../../core/engine/llm_service.dart';
 import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/analysis_result.dart';
-import '../../domain/entities/anomaly.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bee_mascot.dart';
 import '../widgets/category_breakdown_chart.dart';
 import '../widgets/daily_spend_chart.dart';
 import '../widgets/kpi_card.dart';
 import '../widgets/senior_dashboard_view.dart';
 
-/// Main overview screen (`Обзор`): Telecom Balance hero card, 4 KPI cards,
-/// daily spend chart, category donut, top-5 numbers, and anti-hallucination AI card.
-class DashboardScreen extends StatelessWidget {
+/// Main overview screen (`Обзор`): Compact Telecom Balance hero card with BeeMascot,
+/// tight 2×2 KPI grid, unified analytics card (`По дням` / `Категории` / `Топ-5`),
+/// and collapsible AI/Decimal audit summary.
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
     super.key,
     required this.controller,
@@ -24,12 +25,31 @@ class DashboardScreen extends StatelessWidget {
   final AppController controller;
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _analyticsTab = 0;
+  bool _auditExpanded = false;
+
+  AppController get controller => widget.controller;
+
+  @override
   Widget build(BuildContext context) {
     final result = controller.activeResult;
     final isRu = controller.language == AppLanguage.ru;
 
     if (controller.isBusy && result == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: BeeMascot(
+            state: MascotState.loader,
+            size: 112,
+            language: controller.language,
+          ),
+        ),
+      );
     }
 
     if (result == null) {
@@ -95,43 +115,15 @@ class DashboardScreen extends StatelessWidget {
       color: AppTheme.beelineYellow,
       onRefresh: controller.loadDemoFamily,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         children: [
           _buildHeroBalanceCard(context, result, isRu),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildKpiGrid(context, result, isRu),
-          const SizedBox(height: 16),
-          _buildSummaryCard(context, result, isRu),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= 900) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: _buildDailyChartCard(context, result, isRu),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: _buildCategoryCard(context, result, isRu),
-                    ),
-                  ],
-                );
-              }
-              return Column(
-                children: [
-                  _buildDailyChartCard(context, result, isRu),
-                  const SizedBox(height: 16),
-                  _buildCategoryCard(context, result, isRu),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildTopNumbersCard(context, result, isRu),
+          const SizedBox(height: 12),
+          _buildAnalyticsCard(context, result, isRu),
+          const SizedBox(height: 12),
+          _buildCollapsibleSummaryCard(context, result, isRu),
         ],
       ),
     );
@@ -143,8 +135,27 @@ class DashboardScreen extends StatelessWidget {
     bool isRu,
   ) {
     final member = controller.activeMember;
+    final bestTariff = controller.tariffRecommendations.isNotEmpty
+        ? controller.tariffRecommendations.first
+        : null;
+    final mascotInfo = BeeMascot.fromAnalysis(
+      result: result,
+      language: controller.language,
+      bestTariff: bestTariff,
+    );
+    final hasOvercharge = result.totalOverchargeSom > Decimal.zero;
+    final statusPillText = hasOvercharge
+        ? (isRu
+            ? 'Найдено ${result.anomalies.length} угроз на ${formatSom(result.totalOverchargeSom)} сом →'
+            : '${result.anomalies.length} коркунуч (${formatSom(result.totalOverchargeSom)} сом) →')
+        : (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero
+            ? (isRu
+                ? 'Всё чисто! Тариф сэкономит ${formatSom(bestTariff.yearlySavingsSom)} сом/год →'
+                : 'Баары таза! Тариф ${formatSom(bestTariff.yearlySavingsSom)} сом/жыл үнөмдөйт →')
+            : mascotInfo.message);
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -155,133 +166,165 @@ class DashboardScreen extends StatelessWidget {
               Color(0xFF101014),
             ],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: AppTheme.carbonBorder),
         ),
         child: Stack(
           children: [
             Positioned(
-              right: -32,
+              right: -36,
               top: -28,
               child: Transform.rotate(
                 angle: -0.45,
                 child: Container(
-                  width: 120,
-                  height: 220,
+                  width: 110,
+                  height: 200,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.beelineYellow.withValues(alpha: 0.22),
-                        AppTheme.beelineYellow.withValues(alpha: 0.04),
+                        AppTheme.beelineYellow.withValues(alpha: 0.20),
+                        AppTheme.beelineYellow.withValues(alpha: 0.03),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            Positioned(
-              right: 28,
-              top: -40,
-              child: Transform.rotate(
-                angle: -0.45,
-                child: Container(
-                  width: 24,
-                  height: 220,
-                  color: AppTheme.beelineYellow.withValues(alpha: 0.16),
-                ),
-              ),
-            ),
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.beelineYellow,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    member?.operatorName ?? 'Mobile KG',
+                                    style: const TextStyle(
+                                      color: AppTheme.obsidianBlack,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  member != null
+                                      ? '${member.name} · ${member.roleLabel}'
+                                      : result.sourceName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ],
                             ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.beelineYellow,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              member?.operatorName ?? 'Mobile KG',
+                            const SizedBox(height: 4),
+                            Text(
+                              '${member?.phone ?? ""} · ${result.report.periodDays} ${isRu ? "дн." : "күн"}',
                               style: const TextStyle(
-                                color: AppTheme.obsidianBlack,
-                                fontWeight: FontWeight.w800,
+                                color: AppTheme.coolGray,
                                 fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
                           ),
-                          Text(
-                            member != null
-                                ? '${member.name} · ${member.roleLabel}'
-                                : result.sourceName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                              letterSpacing: -0.3,
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        onPressed: controller.loadCustomCsvForActiveMember,
+                        icon: const Icon(Icons.upload_file_rounded, size: 16),
+                        label: Text(isRu ? 'Загрузить CSV' : 'CSV'),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton.outlined(
+                        tooltip: isRu ? 'Загрузить демо' : 'Демо жүктөө',
+                        style: IconButton.styleFrom(
+                          foregroundColor: AppTheme.beelineYellow,
+                          side: const BorderSide(color: Color(0xFF3A3A44)),
+                        ),
+                        onPressed: controller.loadDemoFamily,
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () => controller.setTabIndex(hasOvercharge ? 1 : 3),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (hasOvercharge
+                                ? AppTheme.coralRed
+                                : AppTheme.electricGreen)
+                            .withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: (hasOvercharge
+                                  ? AppTheme.coralRed
+                                  : AppTheme.beelineYellow)
+                              .withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          BeeMascot(
+                            state: mascotInfo.state,
+                            size: 44,
+                            showBubble: false,
+                            language: controller.language,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              statusPillText,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                height: 1.25,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${member?.phone ?? ""} · ${result.sourceName} · '
-                        '${result.records.length} ${isRu ? "строк" : "сап"} · '
-                        '${result.report.periodDays} ${isRu ? "дн." : "күн"}',
-                        style: const TextStyle(
-                          color: AppTheme.coolGray,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: controller.loadCustomCsvForActiveMember,
-                        icon: const Icon(Icons.upload_file_rounded, size: 18),
-                        label: Text(isRu ? 'Загрузить CSV' : 'CSV жүктөө'),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                            color: Color(0xFF3A3A44),
-                            width: 1.5,
-                          ),
-                        ),
-                        onPressed: controller.loadDemoFamily,
-                        icon: const Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 18,
-                          color: AppTheme.beelineYellow,
-                        ),
-                        label: Text(
-                          isRu
-                              ? 'Загрузить встроенное демо (5 абонентов)'
-                              : 'Орнотулган демо (5 абонент)',
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -297,71 +340,154 @@ class DashboardScreen extends StatelessWidget {
     AnalysisResult result,
     bool isRu,
   ) {
-    final cards = <Widget>[
-      KpiCard(
-        title: isRu ? 'Всего потрачено' : 'Жалпы сарпталды',
-        value: '${formatSom(result.report.totalSpendSom)} сом',
-        subtitle:
-            '${result.records.length} ${isRu ? "операций за период" : "операция"}',
-        icon: Icons.account_balance_wallet_rounded,
-        accentColor: AppTheme.beelineYellow,
-      ),
-      KpiCard(
-        title: isRu ? 'Возможная переплата' : 'Мүмкүн ашыкча төлөм',
-        value: '${formatSom(result.totalOverchargeSom)} сом',
-        subtitle:
-            '${result.anomalies.length} ${isRu ? "аномалий (без двойного учёта)" : "аномалия"}',
-        icon: Icons.gpp_maybe_rounded,
-        accentColor: result.totalOverchargeSom > Decimal.zero
-            ? AppTheme.coralRed
-            : AppTheme.electricGreen,
-        onTap: () => controller.setTabIndex(1),
-      ),
-      KpiCard(
-        title: isRu
-            ? 'Прогноз утечки за год (подписки × 12)'
-            : 'Жылдык жоготуу (жазылуу × 12)',
-        value: '${formatSom(result.annualLeakSom)} сом',
-        subtitle: isRu
-            ? 'Подписки и контент-услуги'
-            : 'Жазылуулар жана контент',
-        icon: Icons.trending_up_rounded,
-        accentColor: AppTheme.warmAmber,
-      ),
-      KpiCard(
-        title: isRu ? 'Отброшено битых строк' : 'Бузулган саптар',
-        value: '${result.droppedRows.length}',
-        subtitle: isRu
-            ? 'Нажмите для просмотра лога'
-            : 'Тизмени көрүү үчүн басыңыз',
-        icon: Icons.cleaning_services_rounded,
-        accentColor: AppTheme.electricGreen,
-        onTap: () => _showDroppedRowsDialog(context, result, isRu),
-      ),
-    ];
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
-        final crossCount = w >= 1000 ? 4 : (w >= 560 ? 2 : 1);
-        final cardWidth = (w - (crossCount - 1) * 12) / crossCount;
+        final isCompact = w < 700;
+        final crossCount = w >= 1000 ? 4 : 2;
+        final cardWidth = (w - (crossCount - 1) * 10) / crossCount;
+
+        final cards = <Widget>[
+          KpiCard(
+            title: isCompact
+                ? (isRu ? 'Всего трат' : 'Жалпы')
+                : (isRu ? 'Всего потрачено' : 'Жалпы сарпталды'),
+            value: '${formatSom(result.report.totalSpendSom)} сом',
+            subtitle:
+                '${result.records.length} ${isRu ? "операций" : "операция"}',
+            icon: Icons.account_balance_wallet_rounded,
+            accentColor: AppTheme.beelineYellow,
+            compact: isCompact,
+          ),
+          KpiCard(
+            title: isCompact
+                ? (isRu ? 'Переплата' : 'Ашыкча')
+                : (isRu ? 'Возможная переплата' : 'Мүмкүн ашыкча төлөм'),
+            value: '${formatSom(result.totalOverchargeSom)} сом',
+            subtitle:
+                '${result.anomalies.length} ${isRu ? "аномалий" : "аномалия"}',
+            icon: Icons.gpp_maybe_rounded,
+            accentColor: result.totalOverchargeSom > Decimal.zero
+                ? AppTheme.coralRed
+                : AppTheme.electricGreen,
+            compact: isCompact,
+            onTap: () => controller.setTabIndex(1),
+          ),
+          KpiCard(
+            title: isCompact
+                ? (isRu ? 'Утечка / год' : 'Жылдык')
+                : (isRu
+                    ? 'Прогноз утечки за год (подписки × 12)'
+                    : 'Жылдык жоготуу (жазылуу × 12)'),
+            value: '${formatSom(result.annualLeakSom)} сом',
+            subtitle: isRu ? 'Подписки × 12' : 'Жазылуулар × 12',
+            icon: Icons.trending_up_rounded,
+            accentColor: AppTheme.warmAmber,
+            compact: isCompact,
+          ),
+          KpiCard(
+            title: isCompact
+                ? (isRu ? 'Битые строки' : 'Бузук сап')
+                : (isRu ? 'Отброшено битых строк' : 'Бузулган саптар'),
+            value: '${result.droppedRows.length}',
+            subtitle: isRu ? 'Нажмите для лога' : 'Тизмени көрүү',
+            icon: Icons.cleaning_services_rounded,
+            accentColor: AppTheme.electricGreen,
+            compact: isCompact,
+            onTap: () => _showDroppedRowsDialog(context, result, isRu),
+          ),
+        ];
+
         return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 10,
+          runSpacing: 10,
           children: cards
-              .map(
-                (c) => SizedBox(
-                  width: cardWidth,
-                  child: c,
-                ),
-              )
+              .map((c) => SizedBox(width: cardWidth, child: c))
               .toList(),
         );
       },
     );
   }
 
-  Widget _buildSummaryCard(
+  Widget _buildAnalyticsCard(
+    BuildContext context,
+    AnalysisResult result,
+    bool isRu,
+  ) {
+    final theme = Theme.of(context);
+    final segments = isRu
+        ? const ['По дням', 'Категории', 'Топ-5']
+        : const ['Күндөр', 'Түзүмү', 'Топ-5'];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              child: Row(
+                children: List<Widget>.generate(segments.length, (i) {
+                  final selected = _analyticsTab == i;
+                  return Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _analyticsTab = i),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppTheme.beelineYellow
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          segments[i],
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                selected ? FontWeight.w800 : FontWeight.w600,
+                            color: selected
+                                ? AppTheme.obsidianBlack
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_analyticsTab == 0)
+              DailySpendChart(
+                days: result.report.byDay,
+                anomalies: result.anomalies,
+                language: controller.language,
+              )
+            else if (_analyticsTab == 1)
+              CategoryBreakdownChart(
+                report: result.report,
+                language: controller.language,
+              )
+            else
+              _buildTopNumbersList(context, result, isRu),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleSummaryCard(
     BuildContext context,
     AnalysisResult result,
     bool isRu,
@@ -369,219 +495,149 @@ class DashboardScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+            InkWell(
+              onTap: () => setState(() => _auditExpanded = !_auditExpanded),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
                   children: [
                     Icon(
                       Icons.verified_rounded,
+                      size: 20,
                       color: controller.llmUsedFallback
                           ? AppTheme.warmAmber
                           : AppTheme.electricGreen,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      isRu
-                          ? 'Резюме аудита (защита от галлюцинаций)'
-                          : 'Аудит жыйынтыгы (галлюцинациядан коргоо)',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Text(
+                        isRu
+                            ? 'Подробнее: AI-резюме и проверка Decimal'
+                            : 'Толугураак: AI-корутунду жана Decimal текшерүү',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                    ),
+                    Icon(
+                      _auditExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                     ),
                   ],
                 ),
-                OutlinedButton.icon(
-                  onPressed: controller.isLoadingLlm
-                      ? null
-                      : () => _openLlmDialog(context, isRu),
-                  icon: controller.isLoadingLlm
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.auto_fix_high_rounded, size: 18),
-                  label: Text(isRu ? 'AI-пояснение (опц.)' : 'AI түшүндүрмө'),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              controller.currentSummaryText,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                Chip(
-                  avatar: Icon(
-                    controller.llmUsedLlm
-                        ? Icons.psychology_rounded
-                        : Icons.lock_rounded,
-                    size: 16,
-                    color: AppTheme.beelineYellow,
+            if (_auditExpanded) ...[
+              const Divider(height: 18),
+              Text(
+                controller.currentSummaryText,
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: controller.isLoadingLlm
+                        ? null
+                        : () => _openLlmDialog(context, isRu),
+                    icon: controller.isLoadingLlm
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_fix_high_rounded, size: 18),
+                    label: Text(isRu ? 'AI-пояснение (опц.)' : 'AI түшүндүрмө'),
                   ),
-                  label: Text(
-                    controller.llmUsedLlm
-                        ? (isRu
-                            ? 'LLM проверено валидатором фактов'
-                            : 'LLM фактылар менен текшерилди')
-                        : controller.llmUsedFallback
-                            ? (isRu
-                                ? 'LLM отклонено валидатором → детерминированный шаблон'
-                                : 'LLM четке кагылды → так шаблон')
-                            : (isRu
-                                ? 'Детерминированный расчёт (Decimal)'
-                                : 'Так эсептөө (Decimal)'),
-                  ),
-                ),
-                if (controller.llmRejectionReasons.isNotEmpty)
                   Chip(
+                    avatar: Icon(
+                      controller.llmUsedLlm
+                          ? Icons.psychology_rounded
+                          : Icons.lock_rounded,
+                      size: 16,
+                      color: AppTheme.beelineYellow,
+                    ),
                     label: Text(
-                      controller.llmRejectionReasons.take(2).join(', '),
+                      controller.llmUsedLlm
+                          ? (isRu
+                              ? 'LLM проверено валидатором фактов'
+                              : 'LLM фактылар менен текшерилди')
+                          : controller.llmUsedFallback
+                              ? (isRu
+                                  ? 'LLM отклонено → точный шаблон'
+                                  : 'LLM четке кагылды → так шаблон')
+                              : (isRu
+                                  ? 'Детерминированный расчёт (Decimal)'
+                                  : 'Так эсептөө (Decimal)'),
                     ),
                   ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDailyChartCard(
-    BuildContext context,
-    AnalysisResult result,
-    bool isRu,
-  ) {
-    final spikeCount =
-        result.anomalies.where((a) => a.type == AnomalyType.daySpike).length;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isRu
-                  ? 'Расходы по дням (аномальные всплески: $spikeCount)'
-                  : 'Күндүк чыгымдар (кескин өсүштөр: $spikeCount)',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            DailySpendChart(
-              days: result.report.byDay,
-              anomalies: result.anomalies,
-              language: controller.language,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(
-    BuildContext context,
-    AnalysisResult result,
-    bool isRu,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isRu ? 'Структура расходов' : 'Чыгымдардын түзүмү',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            CategoryBreakdownChart(
-              report: result.report,
-              language: controller.language,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopNumbersCard(
+  Widget _buildTopNumbersList(
     BuildContext context,
     AnalysisResult result,
     bool isRu,
   ) {
     final theme = Theme.of(context);
     final top = result.report.topNumbers;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isRu
-                  ? 'Топ-5 самых затратных номеров (нормализовано)'
-                  : 'Эң көп чыгым кеткен 5 номер',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (top.isEmpty)
-              Text(isRu ? 'Нет платных номеров' : 'Акы төлөнүүчү номерлер жок')
-            else
-              ...top.map(
-                (item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: item.isShortCode
-                        ? AppTheme.coralRed.withValues(alpha: 0.16)
-                        : AppTheme.beelineYellow,
-                    child: Icon(
-                      item.isShortCode
-                          ? Icons.sms_failed_rounded
-                          : Icons.phone_rounded,
-                      color: item.isShortCode
-                          ? AppTheme.coralRed
-                          : AppTheme.obsidianBlack,
-                    ),
-                  ),
-                  title: Text(
-                    item.normalizedNumber,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  subtitle: Text(
-                    '${item.count} ${isRu ? "списаний" : "жолу"}'
-                    '${item.isShortCode ? (isRu ? " · Короткий номер" : " · Кыска номер") : ""}',
-                  ),
-                  trailing: Text(
-                    '${formatSom(item.totalSom)} сом',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
+    if (top.isEmpty) {
+      return Text(isRu ? 'Нет платных номеров' : 'Акы төлөнүүчү номерлер жок');
+    }
+    return Column(
+      children: top
+          .map(
+            (item) => ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                radius: 18,
+                backgroundColor: item.isShortCode
+                    ? AppTheme.coralRed.withValues(alpha: 0.16)
+                    : AppTheme.beelineYellow,
+                child: Icon(
+                  item.isShortCode
+                      ? Icons.sms_failed_rounded
+                      : Icons.phone_rounded,
+                  size: 18,
+                  color: item.isShortCode
+                      ? AppTheme.coralRed
+                      : AppTheme.obsidianBlack,
                 ),
               ),
-          ],
-        ),
-      ),
+              title: Text(
+                item.normalizedNumber,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                '${item.count} ${isRu ? "списаний" : "жолу"}'
+                '${item.isShortCode ? (isRu ? " · Короткий номер" : " · Кыска номер") : ""}',
+              ),
+              trailing: Text(
+                '${formatSom(item.totalSom)} сом',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 

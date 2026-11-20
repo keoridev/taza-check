@@ -8,6 +8,7 @@ import 'screens/family_shield_screen.dart';
 import 'screens/tariff_optimizer_screen.dart';
 import 'state/app_controller.dart';
 import 'theme/app_theme.dart';
+import 'widgets/bee_mascot.dart';
 
 /// Root Material 3 adaptive application for `billing_shield`.
 class BillingShieldApp extends StatefulWidget {
@@ -90,7 +91,9 @@ class _MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= 840;
+    final isCompactMobile = width < 600;
     final labels = AppStrings.navLabels(controller.language);
+    final mobileLabels = AppStrings.compactNavLabels(controller.language);
     final members = controller.familyMembers;
     final activeMember = controller.activeMember;
     final theme = Theme.of(context);
@@ -103,37 +106,80 @@ class _MainShell extends StatelessWidget {
       _ => ClaimExportScreen(controller: controller),
     };
 
+    final mainContent = isWide
+        ? Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 4, 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: NavigationRail(
+                      backgroundColor: Colors.transparent,
+                      selectedIndex: controller.selectedTabIndex,
+                      onDestinationSelected: controller.setTabIndex,
+                      extended: width >= 1120,
+                      labelType: width >= 1120
+                          ? NavigationRailLabelType.none
+                          : NavigationRailLabelType.selected,
+                      destinations: List<NavigationRailDestination>.generate(
+                        labels.length,
+                        (i) => NavigationRailDestination(
+                          icon: Icon(_icons[i]),
+                          selectedIcon: Icon(_selectedIcons[i]),
+                          label: Text(labels[i]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(child: body),
+            ],
+          )
+        : body;
+
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 16,
+        titleSpacing: isCompactMobile ? 10 : 16,
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(7),
+              padding: EdgeInsets.all(isCompactMobile ? 6 : 7),
               decoration: BoxDecoration(
                 color: AppTheme.beelineYellow,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shield_rounded,
                 color: AppTheme.obsidianBlack,
-                size: 20,
+                size: isCompactMobile ? 18 : 20,
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: isCompactMobile ? 8 : 10),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    AppStrings.appTitle(controller.language),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 17,
-                      letterSpacing: -0.3,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      AppStrings.appTitle(controller.language),
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: isCompactMobile ? 15 : 17,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                   if (isWide)
@@ -166,11 +212,14 @@ class _MainShell extends StatelessWidget {
                   )
                   .toList(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isCompactMobile ? 2 : 6,
+                  vertical: 6,
+                ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompactMobile ? 8 : 10,
+                    vertical: isCompactMobile ? 4 : 6,
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.beelineYellow,
@@ -179,18 +228,18 @@ class _MainShell extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_rounded,
-                        size: 16,
+                        size: isCompactMobile ? 14 : 16,
                         color: AppTheme.obsidianBlack,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
                         activeMember?.name ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.obsidianBlack,
                           fontWeight: FontWeight.w800,
-                          fontSize: 13,
+                          fontSize: isCompactMobile ? 12 : 13,
                         ),
                       ),
                     ],
@@ -199,6 +248,13 @@ class _MainShell extends StatelessWidget {
               ),
             ),
           TextButton(
+            style: isCompactMobile
+                ? TextButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  )
+                : null,
             onPressed: () => controller.setLanguage(
               controller.language == AppLanguage.ru
                   ? AppLanguage.ky
@@ -206,10 +262,18 @@ class _MainShell extends StatelessWidget {
             ),
             child: Text(
               controller.language.shortLabel,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: isCompactMobile ? 12 : 14,
+              ),
             ),
           ),
           IconButton(
+            visualDensity: isCompactMobile ? VisualDensity.compact : null,
+            padding: isCompactMobile ? EdgeInsets.zero : null,
+            constraints: isCompactMobile
+                ? const BoxConstraints(minWidth: 34, minHeight: 34)
+                : null,
             tooltip: controller.language == AppLanguage.ru
                 ? 'Режим для родителей / бабушки'
                 : 'Ата-эне / чоң эне режими',
@@ -218,10 +282,16 @@ class _MainShell extends StatelessWidget {
               controller.seniorMode
                   ? Icons.accessibility_new_rounded
                   : Icons.accessibility_rounded,
+              size: isCompactMobile ? 20 : 24,
               color: controller.seniorMode ? AppTheme.beelineYellow : null,
             ),
           ),
           IconButton(
+            visualDensity: isCompactMobile ? VisualDensity.compact : null,
+            padding: isCompactMobile ? EdgeInsets.zero : null,
+            constraints: isCompactMobile
+                ? const BoxConstraints(minWidth: 34, minHeight: 34)
+                : null,
             tooltip: controller.themeMode == ThemeMode.dark
                 ? 'Светлая тема'
                 : 'Тёмная тема',
@@ -230,60 +300,57 @@ class _MainShell extends StatelessWidget {
               controller.themeMode == ThemeMode.dark
                   ? Icons.light_mode_rounded
                   : Icons.dark_mode_rounded,
+              size: isCompactMobile ? 20 : 24,
             ),
           ),
+          if (isCompactMobile) const SizedBox(width: 4),
         ],
       ),
-      body: isWide
-          ? Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 4, 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
+      body: Stack(
+        children: [
+          mainContent,
+          if (controller.isBusy)
+            Positioned.fill(
+              child: ColoredBox(
+                color: AppTheme.obsidianBlack.withValues(alpha: 0.78),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
                     child: Container(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(22),
+                        color: AppTheme.carbonSurface,
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
+                          color: AppTheme.beelineYellow,
+                          width: 2,
                         ),
                       ),
-                      child: NavigationRail(
-                        backgroundColor: Colors.transparent,
-                        selectedIndex: controller.selectedTabIndex,
-                        onDestinationSelected: controller.setTabIndex,
-                        extended: width >= 1120,
-                        labelType: width >= 1120
-                            ? NavigationRailLabelType.none
-                            : NavigationRailLabelType.selected,
-                        destinations: List<NavigationRailDestination>.generate(
-                          labels.length,
-                          (i) => NavigationRailDestination(
-                            icon: Icon(_icons[i]),
-                            selectedIcon: Icon(_selectedIcons[i]),
-                            label: Text(labels[i]),
-                          ),
-                        ),
+                      child: BeeMascot(
+                        state: MascotState.loader,
+                        size: 108,
+                        language: controller.language,
                       ),
                     ),
                   ),
                 ),
-                Expanded(child: body),
-              ],
-            )
-          : body,
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: isWide
           ? null
           : NavigationBar(
               selectedIndex: controller.selectedTabIndex,
               onDestinationSelected: controller.setTabIndex,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               destinations: List<NavigationDestination>.generate(
-                labels.length,
+                mobileLabels.length,
                 (i) => NavigationDestination(
                   icon: Icon(_icons[i]),
                   selectedIcon: Icon(_selectedIcons[i]),
-                  label: labels[i],
+                  label: mobileLabels[i],
                 ),
               ),
             ),

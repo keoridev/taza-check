@@ -12,6 +12,7 @@ class KpiCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.accentColor,
+    this.compact = false,
     this.onTap,
   });
 
@@ -20,6 +21,7 @@ class KpiCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color accentColor;
+  final bool compact;
   final VoidCallback? onTap;
 
   @override
@@ -36,7 +38,7 @@ class KpiCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(compact ? 12 : 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -44,20 +46,25 @@ class KpiCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(compact ? 7 : 10),
                     decoration: BoxDecoration(
                       color: badgeBg,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(compact ? 10 : 12),
                     ),
-                    child: Icon(icon, color: badgeIconColor, size: 20),
+                    child: Icon(
+                      icon,
+                      color: badgeIconColor,
+                      size: compact ? 16 : 20,
+                    ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: compact ? 8 : 10),
                   Expanded(
                     child: Text(
                       title,
-                      maxLines: 2,
+                      maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.copyWith(
+                        fontSize: compact ? 12 : null,
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
@@ -66,32 +73,37 @@ class KpiCard extends StatelessWidget {
                   if (onTap != null)
                     Icon(
                       Icons.arrow_outward_rounded,
-                      size: 16,
+                      size: compact ? 14 : 16,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              SizedBox(height: compact ? 10 : 14),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: compact ? 20 : 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: compact ? -0.5 : -0.8,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              if (!compact) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
