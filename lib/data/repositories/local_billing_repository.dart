@@ -7,7 +7,6 @@ import '../../domain/entities/family_member.dart';
 import '../../domain/repositories/billing_repository.dart';
 import '../services/export_service.dart';
 
-/// Local repository loading bundled demo CSV assets and user-picked CSV files.
 class LocalBillingRepository implements BillingRepository {
   LocalBillingRepository({
     BillingAnalyzer? analyzer,

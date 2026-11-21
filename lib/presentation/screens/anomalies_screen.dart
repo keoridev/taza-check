@@ -24,7 +24,7 @@ class AnomaliesScreen extends StatefulWidget {
     BuildContext context, {
     required AppLanguage language,
   }) =>
-      _showSmsInterceptSheetImpl(context, language == AppLanguage.ru);
+      _showSmsInterceptSheetImpl(context, language);
 
   @override
   State<AnomaliesScreen> createState() => _AnomaliesScreenState();
@@ -37,11 +37,19 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final result = controller.activeResult;
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
 
     if (result == null) {
       return Center(
-        child: Text(isRu ? 'Нет загруженных данных' : 'Маалымат жүктөлгөн эмес'),
+        child: Text(
+          tr(
+            lang,
+            ru: 'Нет загруженных данных',
+            ky: 'Маалымат жүктөлгөн эмес',
+            en: 'No billing data loaded',
+          ),
+        ),
       );
     }
 
@@ -61,7 +69,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
           fontWeight: FontWeight.w700,
         ),
         label: Text(
-          '${isRu ? "Все" : "Баары"} (${result.anomalies.length})',
+          '${tr(lang, ru: "Все", ky: "Баары", en: "All")} (${result.anomalies.length})',
           style: TextStyle(
             color: allSelected ? AppTheme.obsidianBlack : null,
             fontWeight: FontWeight.w700,
@@ -84,7 +92,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
             fontWeight: FontWeight.w700,
           ),
           label: Text(
-            '${AppStrings.anomalyTitle(type, controller.language)} ($count)',
+            '${AppStrings.anomalyTitle(type, lang)} ($count)',
             style: TextStyle(
               color: isSelected ? AppTheme.obsidianBlack : null,
               fontWeight: FontWeight.w700,
@@ -113,9 +121,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        isRu
-                            ? 'Фильтр по типу (${filtered.length}/${result.anomalies.length})'
-                            : 'Аномалия чыпкасы (${filtered.length}/${result.anomalies.length})',
+                        tr(
+                          lang,
+                          ru: 'Фильтр по типу (${filtered.length}/${result.anomalies.length})',
+                          ky: 'Аномалия чыпкасы (${filtered.length}/${result.anomalies.length})',
+                          en: 'Filter by type (${filtered.length}/${result.anomalies.length})',
+                        ),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -138,7 +149,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                       ),
                       onPressed: () => AnomaliesScreen.showSmsInterceptSheet(
                         context,
-                        language: controller.language,
+                        language: lang,
                       ),
                       icon: const Icon(
                         Icons.sms_failed_rounded,
@@ -146,7 +157,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                         color: AppTheme.coralRed,
                       ),
                       label: Text(
-                        isRu ? 'Тест перехвата SMS' : 'SMS кармоо тести',
+                        tr(
+                          lang,
+                          ru: 'Тест перехвата SMS',
+                          ky: 'SMS кармоо тести',
+                          en: 'SMS Intercept',
+                        ),
                       ),
                     ),
                   ],
@@ -181,15 +197,18 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Text(
-                  isRu
-                      ? 'В этой категории аномалий не найдено.'
-                      : 'Бул категорияда аномалиялар табылган жок.',
+                  tr(
+                    lang,
+                    ru: 'В этой категории аномалий не найдено.',
+                    ky: 'Бул категорияда аномалиялар табылган жок.',
+                    en: 'No anomalies found in this category.',
+                  ),
                 ),
               ),
             ),
           )
         else
-          ...filtered.map((anomaly) => _buildAnomalyCard(context, anomaly, isRu)),
+          ...filtered.map((anomaly) => _buildAnomalyCard(context, anomaly, lang)),
       ],
     );
   }
@@ -197,10 +216,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
   Widget _buildAnomalyCard(
     BuildContext context,
     Anomaly anomaly,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final controller = widget.controller;
     final theme = Theme.of(context);
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final isSpike = anomaly.type == AnomalyType.daySpike;
     final accent = isSpike ? AppTheme.warmAmber : AppTheme.coralRed;
     final isSelectedForClaim =
@@ -234,10 +255,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          AppStrings.anomalyTitle(
-                            anomaly.type,
-                            controller.language,
-                          ),
+                          AppStrings.anomalyTitle(anomaly.type, lang),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
@@ -255,8 +273,8 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   ),
                   Text(
                     isSpike
-                        ? '-${formatSom(anomaly.costSom)} сом'
-                        : '${isRu ? "К возврату" : "Кайтаруу"}: ${formatSom(anomaly.overchargeSom)} сом',
+                        ? '-${formatSom(anomaly.costSom)} $cur'
+                        : '${tr(lang, ru: "К возврату", ky: "Кайтаруу", en: "Refund")}: ${formatSom(anomaly.overchargeSom)} $cur',
                     style: TextStyle(
                       color: isSpike ? AppTheme.coralRed : AppTheme.electricGreen,
                       fontWeight: FontWeight.w800,
@@ -271,8 +289,8 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    '${isRu ? "Номер" : "Номер"}: ${anomaly.number}'
-                    '${anomaly.rowNumber != null ? " · ${isRu ? "строка" : "сап"} #${anomaly.rowNumber}" : ""}',
+                    '${tr(lang, ru: "Номер", ky: "Номер", en: "Number")}: ${anomaly.number}'
+                    '${anomaly.rowNumber != null ? " · ${tr(lang, ru: "строка", ky: "сап", en: "row")} #${anomaly.rowNumber}" : ""}',
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -284,8 +302,8 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                     : MascotState.alert,
                 compact: true,
                 size: 58,
-                language: controller.language,
-                message: isRu ? anomaly.explanationRu : anomaly.explanationKy,
+                language: lang,
+                message: anomaly.explanation(lang),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -307,9 +325,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                isRu
-                                    ? 'Скопировано в буфер: $copyPayload'
-                                    : 'Көчүрүлдү: $copyPayload',
+                                tr(
+                                  lang,
+                                  ru: 'Скопировано в буфер: $copyPayload',
+                                  ky: 'Көчүрүлдү: $copyPayload',
+                                  en: 'Copied to clipboard: $copyPayload',
+                                ),
                               ),
                             ),
                           );
@@ -357,7 +378,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                       label: Text(
-                        isRu ? 'Включить в заявление' : 'Арызга кошуу',
+                        tr(
+                          lang,
+                          ru: 'Включить в заявление',
+                          ky: 'Арызга кошуу',
+                          en: 'Include in claim',
+                        ),
                         style: TextStyle(
                           color: isSelectedForClaim
                               ? AppTheme.obsidianBlack
@@ -380,29 +406,32 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
   }
 }
 
-Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
+Future<void> _showSmsInterceptSheetImpl(
+  BuildContext context,
+  AppLanguage language,
+) async {
   HapticFeedback.mediumImpact();
   var neutralized = false;
-  final language = isRu ? AppLanguage.ru : AppLanguage.ky;
+  final tr = AppStrings.tr;
   await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.carbonSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  16,
-                  20,
-                  24 + MediaQuery.viewInsetsOf(ctx).bottom,
-                ),
-                child: Column(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppTheme.carbonSurface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+    ),
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                24 + MediaQuery.viewInsetsOf(ctx).bottom,
+              ),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -431,12 +460,18 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                       Expanded(
                         child: Text(
                           neutralized
-                              ? (isRu
-                                  ? 'Угроза заблокирована!'
-                                  : 'Коркунуч бөгөттөлдү!')
-                              : (isRu
-                                  ? 'Beeline Guard · Перехват SMS'
-                                  : 'Beeline Guard · SMS кармоо'),
+                              ? tr(
+                                  language,
+                                  ru: 'Угроза заблокирована!',
+                                  ky: 'Коркунуч бөгөттөлдү!',
+                                  en: 'Threat blocked!',
+                                )
+                              : tr(
+                                  language,
+                                  ru: 'Beeline Guard · Перехват SMS',
+                                  ky: 'Beeline Guard · SMS кармоо',
+                                  en: 'Beeline Guard · SMS Intercept',
+                                ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -452,12 +487,18 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                     size: 72,
                     language: language,
                     message: neutralized
-                        ? (isRu
-                            ? 'Отлично! Команда СТОП отправлена на 7575, вы сэкономили 5 475 сом/год.'
-                            : 'Азаматсыз! 7575 номерине СТОП жөнөтүлдү, жылына 5 475 сом үнөмдөлдү.')
-                        : (isRu
-                            ? 'Осторожно! Прямо сейчас вам пытаются подключить платную подписку на 5 475 сом/год!'
-                            : 'Абайлаңыз! Азыр сизге жылына 5 475 сомдук акы төлөнүүчү жазылуу кошулууда!'),
+                        ? tr(
+                            language,
+                            ru: 'Отлично! Команда СТОП отправлена на 7575, вы сэкономили 5 475 сом/год.',
+                            ky: 'Азаматсыз! 7575 номерине СТОП жөнөтүлдү, жылына 5 475 сом үнөмдөлдү.',
+                            en: 'Great! STOP sent to 7575 — you just saved 5,475 KGS/year.',
+                          )
+                        : tr(
+                            language,
+                            ru: 'Осторожно! Прямо сейчас вам пытаются подключить платную подписку на 5 475 сом/год!',
+                            ky: 'Абайлаңыз! Азыр сизге жылына 5 475 сомдук акы төлөнүүчү жазылуу кошулууда!',
+                            en: 'Watch out! A paid subscription costing 5,475 KGS/year is trying to activate right now!',
+                          ),
                   ),
                   const SizedBox(height: 14),
                   Container(
@@ -474,9 +515,12 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isRu
-                              ? 'От 7575: Подписка «Гороскоп VIP» активирована. Списание 15.00 сом/сутки.'
-                              : '7575тен: «Гороскоп VIP» жазылуусу кошулду. Күнүнө 15.00 сом алынат.',
+                          tr(
+                            language,
+                            ru: 'От 7575: Подписка «Гороскоп VIP» активирована. Списание 15.00 сом/сутки.',
+                            ky: '7575тен: «Гороскоп VIP» жазылуусу кошулду. Күнүнө 15.00 сом алынат.',
+                            en: 'From 7575: "Horoscope VIP" subscription activated. Charge: 15.00 KGS/day.',
+                          ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -485,9 +529,12 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          isRu
-                              ? 'Потенциальная потеря: 5 475 сом/год'
-                              : 'Жылдык жоготуу: 5 475 сом/жыл',
+                          tr(
+                            language,
+                            ru: 'Потенциальная потеря: 5 475 сом/год',
+                            ky: 'Жылдык жоготуу: 5 475 сом/жыл',
+                            en: 'Potential annual loss: 5,475 KGS/year',
+                          ),
                           style: TextStyle(
                             color: neutralized
                                 ? AppTheme.electricGreen
@@ -509,9 +556,12 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                       },
                       icon: const Icon(Icons.block_rounded),
                       label: Text(
-                        isRu
-                            ? 'Заблокировать и отправить СТОП'
-                            : 'Бөгөттөө жана СТОП жөнөтүү',
+                        tr(
+                          language,
+                          ru: 'Заблокировать и отправить СТОП',
+                          ky: 'Бөгөттөө жана СТОП жөнөтүү',
+                          en: 'Block & send STOP',
+                        ),
                       ),
                     )
                   else
@@ -522,14 +572,16 @@ Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
                       icon: const Icon(Icons.check_circle_rounded),
-                      label: Text(isRu ? 'Готово' : 'Даяр'),
+                      label: Text(
+                        tr(language, ru: 'Готово', ky: 'Даяр', en: 'Done'),
+                      ),
                     ),
                 ],
               ),
             ),
-            );
-          },
-        );
-      },
-    );
+          );
+        },
+      );
+    },
+  );
 }

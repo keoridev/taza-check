@@ -1,5 +1,7 @@
 import 'package:decimal/decimal.dart';
 
+import '../../core/constants/app_strings.dart';
+
 /// Mandatory anomaly detector categories required by Task 4.
 enum AnomalyType {
   daySpike('day_spike'),
@@ -24,6 +26,7 @@ class Anomaly {
     required this.overchargeSom,
     required this.explanationRu,
     required this.explanationKy,
+    this.explanationEn = '',
     this.number,
     this.rowNumber,
     this.ussdHint,
@@ -42,8 +45,16 @@ class Anomaly {
   final String? ussdHint;
   final String explanationRu;
   final String explanationKy;
+  final String explanationEn;
   final double? zScore;
   final Decimal? baselineMeanSom;
+
+  String explanation(AppLanguage language) => switch (language) {
+        AppLanguage.ru => explanationRu,
+        AppLanguage.ky => explanationKy,
+        AppLanguage.en =>
+          explanationEn.isNotEmpty ? explanationEn : explanationRu,
+      };
 
   /// Exports the schema expected by automated jury checks (`CLARIFICATIONS_RU.md` §4).
   Map<String, dynamic> toJuryJson() {

@@ -12,6 +12,7 @@ import '../widgets/animated_som_text.dart';
 import '../widgets/bee_mascot.dart';
 import '../widgets/category_breakdown_chart.dart';
 import '../widgets/daily_spend_chart.dart';
+import '../widgets/guide_stories_modal.dart';
 import '../widgets/operator_logo.dart';
 import '../widgets/senior_dashboard_view.dart';
 import '../widgets/stories_recap_modal.dart';
@@ -41,7 +42,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final result = controller.activeResult;
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
 
     if (controller.isBusy && result == null) {
       return Center(
@@ -50,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: BeeMascot(
             state: MascotState.loader,
             size: 112,
-            language: controller.language,
+            language: lang,
           ),
         ),
       );
@@ -77,9 +79,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                isRu
-                    ? 'Загрузите CSV детализацию или встроенное демо'
-                    : 'CSV детализацияны же орнотулган демону жүктөңүз',
+                tr(
+                  lang,
+                  ru: 'Загрузите CSV детализацию или встроенное демо',
+                  ky: 'CSV детализацияны же орнотулган демону жүктөңүз',
+                  en: 'Load a CSV bill or try the built-in family demo',
+                ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -92,15 +97,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   FilledButton.icon(
                     onPressed: controller.loadCustomCsvForActiveMember,
                     icon: const Icon(Icons.upload_file_rounded),
-                    label: Text(isRu ? 'Загрузить CSV' : 'CSV жүктөө'),
+                    label: Text(
+                      tr(lang, ru: 'Загрузить CSV', ky: 'CSV жүктөө', en: 'Load CSV'),
+                    ),
                   ),
                   OutlinedButton.icon(
                     onPressed: controller.loadDemoFamily,
                     icon: const Icon(Icons.groups_rounded),
                     label: Text(
-                      isRu
-                          ? 'Загрузить встроенное демо (5 абонентов)'
-                          : 'Демо жүктөө (5 абонент)',
+                      tr(
+                        lang,
+                        ru: 'Загрузить встроенное демо (5 абонентов)',
+                        ky: 'Демо жүктөө (5 абонент)',
+                        en: 'Load built-in demo (5 lines)',
+                      ),
                     ),
                   ),
                 ],
@@ -124,15 +134,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildStoriesStrip(context, result, isRu),
+            _buildStoriesStrip(context, result, lang),
             const SizedBox(height: 14),
-            _buildHeroBalanceCard(context, result, isRu),
+            _buildHeroBalanceCard(context, result, lang),
             const SizedBox(height: 12),
-            _buildBentoMetrics(context, result, isRu),
+            _buildBentoMetrics(context, result, lang),
             const SizedBox(height: 12),
-            _buildAnalyticsCard(context, result, isRu),
+            _buildAnalyticsCard(context, result, lang),
             const SizedBox(height: 12),
-            _buildCollapsibleSummaryCard(context, result, isRu),
+            _buildCollapsibleSummaryCard(context, result, lang),
           ],
         ),
       ),
@@ -154,8 +164,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStoriesStrip(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
+    final tr = AppStrings.tr;
+    final shortCur = tr(lang, ru: 'с', ky: 'с', en: 'KGS');
     final bestTariff = controller.tariffRecommendations.isNotEmpty
         ? controller.tariffRecommendations.first
         : null;
@@ -170,17 +182,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final savingsCompact = _formatCompactSom(yearlySavings);
 
     final cards = <({
-      int slide,
       String title,
       Color ringAccent,
       List<Color> gradientColors,
       Widget artwork,
+      VoidCallback onOpen,
     })>[
       (
-        slide: 0,
-        title: isRu ? 'Итоги\nмесяца' : 'Айлык\nжыйынтык',
+        title: tr(
+          lang,
+          ru: 'Итоги\nмесяца',
+          ky: 'Айлык\nжыйынтык',
+          en: 'Monthly\nrecap',
+        ),
         ringAccent: AppTheme.beelineYellow,
         gradientColors: const [Color(0xFF4A3800), Color(0xFF14120A)],
+        onOpen: () => showStoriesRecap(
+          context,
+          result: result,
+          language: lang,
+          bestTariff: bestTariff,
+          onOpenClaim: () => controller.setTabIndex(4),
+          initialSlide: 0,
+        ),
         artwork: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -220,12 +244,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       (
-        slide: 1,
-        title: isRu
-            ? '${result.anomalies.length} утечек\n$overchargeCompact с'
-            : '${result.anomalies.length} жоготуу\n$overchargeCompact с',
+        title: tr(
+          lang,
+          ru: '${result.anomalies.length} утечек\n$overchargeCompact $shortCur',
+          ky: '${result.anomalies.length} жоготуу\n$overchargeCompact $shortCur',
+          en: '${result.anomalies.length} leaks\n$overchargeCompact $shortCur',
+        ),
         ringAccent: AppTheme.coralRed,
         gradientColors: const [Color(0xFF4E1116), Color(0xFF160B0C)],
+        onOpen: () => showStoriesRecap(
+          context,
+          result: result,
+          language: lang,
+          bestTariff: bestTariff,
+          onOpenClaim: () => controller.setTabIndex(4),
+          initialSlide: 1,
+        ),
         artwork: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -273,12 +307,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       (
-        slide: 2,
-        title: isRu
-            ? 'Экономия\n$savingsCompact с'
-            : 'Үнөм\n$savingsCompact с',
+        title: tr(
+          lang,
+          ru: 'Экономия\n$savingsCompact $shortCur',
+          ky: 'Үнөм\n$savingsCompact $shortCur',
+          en: 'Save\n$savingsCompact $shortCur',
+        ),
         ringAccent: AppTheme.electricGreen,
         gradientColors: const [Color(0xFF0C3D24), Color(0xFF0A140F)],
+        onOpen: () => showStoriesRecap(
+          context,
+          result: result,
+          language: lang,
+          bestTariff: bestTariff,
+          onOpenClaim: () => controller.setTabIndex(4),
+          initialSlide: 2,
+        ),
         artwork: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -315,12 +359,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       (
-        slide: 3,
-        title: isRu
-            ? 'Семья:\n${controller.familyMembers.length} ном.'
-            : 'Үй-бүлө:\n${controller.familyMembers.length} ном.',
+        title: tr(
+          lang,
+          ru: 'Семья:\n${controller.familyMembers.length} ном.',
+          ky: 'Үй-бүлө:\n${controller.familyMembers.length} ном.',
+          en: 'Family:\n${controller.familyMembers.length} lines',
+        ),
         ringAccent: AppTheme.beelineYellow,
         gradientColors: const [Color(0xFF23194F), Color(0xFF0E0C1A)],
+        onOpen: () => showStoriesRecap(
+          context,
+          result: result,
+          language: lang,
+          bestTariff: bestTariff,
+          onOpenClaim: () => controller.setTabIndex(4),
+          initialSlide: 3,
+        ),
         artwork: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -361,6 +415,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+      (
+        title: tr(
+          lang,
+          ru: 'Обучалка\nдля семьи',
+          ky: 'Колдонмо\nүй-бүлөгө',
+          en: 'Family\nguide',
+        ),
+        ringAccent: AppTheme.beelineYellow,
+        gradientColors: const [Color(0xFF624A00), Color(0xFF171307)],
+        onOpen: () => showGuideStories(
+          context,
+          language: lang,
+          onEnableSeniorMode: () => controller.toggleSeniorMode(true),
+        ),
+        artwork: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.beelineYellow,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 10,
+                      color: AppTheme.obsidianBlack,
+                    ),
+                    Text(
+                      tr(lang, ru: 'ГИД', ky: 'ГИД', en: 'GUIDE'),
+                      style: const TextStyle(
+                        color: AppTheme.obsidianBlack,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: -6,
+              top: 8,
+              child: Image.asset(
+                'assets/mascot/bee_loader.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
+      ),
     ];
 
     return SizedBox(
@@ -374,14 +487,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return _PressableScale(
             onTap: () {
               HapticFeedback.selectionClick();
-              showStoriesRecap(
-                context,
-                result: result,
-                language: controller.language,
-                bestTariff: bestTariff,
-                onOpenClaim: () => controller.setTabIndex(4),
-                initialSlide: card.slide,
-              );
+              card.onOpen();
             },
             child: Container(
               width: 88,
@@ -457,14 +563,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildHeroBalanceCard(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final bestTariff = controller.tariffRecommendations.isNotEmpty
         ? controller.tariffRecommendations.first
         : null;
     final mascotInfo = BeeMascot.fromAnalysis(
       result: result,
-      language: controller.language,
+      language: lang,
       bestTariff: bestTariff,
     );
     final hasOvercharge = result.totalOverchargeSom > Decimal.zero;
@@ -491,9 +599,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isRu
-                            ? 'Расходы за ${result.report.periodDays} дней'
-                            : '${result.report.periodDays} күндүк чыгым',
+                        tr(
+                          lang,
+                          ru: 'Расходы за ${result.report.periodDays} дней',
+                          ky: '${result.report.periodDays} күндүк чыгым',
+                          en: 'Spend over ${result.report.periodDays} days',
+                        ),
                         style: const TextStyle(
                           color: AppTheme.coolGray,
                           fontSize: 13,
@@ -506,6 +617,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         alignment: Alignment.centerLeft,
                         child: AnimatedSomText(
                           amount: result.report.totalSpendSom,
+                          suffix: ' $cur',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 38,
@@ -523,60 +635,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   state: mascotInfo.state,
                   size: 56,
                   showBubble: false,
-                  language: controller.language,
+                  language: lang,
                 ),
               ],
             ),
             const SizedBox(height: 16),
-                InkWell(
-                  onTap: () =>
-                      controller.setTabIndex(hasOvercharge ? 1 : 3),
-                  borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.carbonElevated,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: hasOvercharge
-                                ? AppTheme.coralRed
-                                : AppTheme.electricGreen,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            hasOvercharge
-                                ? (isRu
-                                    ? 'Вернуть ${formatSom(result.totalOverchargeSom)} сом →'
-                                    : '${formatSom(result.totalOverchargeSom)} сом кайтаруу →')
-                                : (isRu ? 'Баланс чист ✓' : 'Баланс таза ✓'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: hasOvercharge
-                                  ? AppTheme.coralRed
-                                  : AppTheme.electricGreen,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            InkWell(
+              onTap: () => controller.setTabIndex(hasOvercharge ? 1 : 3),
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
+                decoration: BoxDecoration(
+                  color: AppTheme.carbonElevated,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: hasOvercharge
+                            ? AppTheme.coralRed
+                            : AppTheme.electricGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        hasOvercharge
+                            ? tr(
+                                lang,
+                                ru: 'Вернуть ${formatSom(result.totalOverchargeSom)} сом →',
+                                ky: '${formatSom(result.totalOverchargeSom)} сом кайтаруу →',
+                                en: 'Reclaim ${formatSom(result.totalOverchargeSom)} $cur →',
+                              )
+                            : tr(
+                                lang,
+                                ru: 'Баланс чист ✓',
+                                ky: 'Баланс таза ✓',
+                                en: 'Balance is clean ✓',
+                              ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: hasOvercharge
+                              ? AppTheme.coralRed
+                              : AppTheme.electricGreen,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -598,7 +717,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: controller.loadCustomCsvForActiveMember,
                     icon: const Icon(Icons.upload_file_rounded, size: 16),
                     label: Text(
-                      isRu ? 'Загрузить CSV' : 'CSV жүктөө',
+                      tr(lang, ru: 'Загрузить CSV', ky: 'CSV жүктөө', en: 'Load CSV'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -625,10 +744,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   onPressed: () => AnomaliesScreen.showSmsInterceptSheet(
                     context,
-                    language: controller.language,
+                    language: lang,
                   ),
                   icon: const Icon(Icons.sms_failed_rounded, size: 16),
-                  label: Text(isRu ? 'Тест SMS' : 'SMS тест'),
+                  label: Text(
+                    tr(lang, ru: 'Тест SMS', ky: 'SMS тест', en: 'Test SMS'),
+                  ),
                 ),
               ],
             ),
@@ -641,9 +762,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildBentoMetrics(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final theme = Theme.of(context);
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.carbonSurface : Colors.white;
     final borderColor = isDark
@@ -676,7 +799,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        isRu ? 'Прогноз утечки' : 'Жылдык жоготуу',
+                        tr(
+                          lang,
+                          ru: 'Прогноз утечки',
+                          ky: 'Жылдык жоготуу',
+                          en: 'Leak forecast',
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelMedium?.copyWith(
@@ -692,7 +820,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${formatSom(result.annualLeakSom)} сом/${isRu ? "год" : "жыл"}',
+                    '${formatSom(result.annualLeakSom)} $cur/${tr(lang, ru: "год", ky: "жыл", en: "yr")}',
                     maxLines: 1,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -707,7 +835,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: InkWell(
-            onTap: () => _showDroppedRowsDialog(context, result, isRu),
+            onTap: () => _showDroppedRowsDialog(context, result, lang),
             borderRadius: BorderRadius.circular(24),
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -723,7 +851,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          isRu ? 'Очистка CSV' : 'CSV тазалоо',
+                          tr(
+                            lang,
+                            ru: 'Очистка CSV',
+                            ky: 'CSV тазалоо',
+                            en: 'CSV cleanup',
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -744,9 +877,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      isRu
-                          ? '${result.droppedRows.length} битые строки'
-                          : '${result.droppedRows.length} бузук сап',
+                      tr(
+                        lang,
+                        ru: '${result.droppedRows.length} битые строки',
+                        ky: '${result.droppedRows.length} бузук сап',
+                        en: '${result.droppedRows.length} bad rows',
+                      ),
                       maxLines: 1,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
@@ -766,13 +902,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildAnalyticsCard(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final segments = isRu
-        ? const ['По дням', 'Категории', 'Топ-5']
-        : const ['Күндөр', 'Түзүмү', 'Топ-5'];
+    final segments = switch (lang) {
+      AppLanguage.ru => const ['По дням', 'Категории', 'Топ-5'],
+      AppLanguage.ky => const ['Күндөр', 'Түзүмү', 'Топ-5'],
+      AppLanguage.en => const ['Daily', 'Categories', 'Top 5'],
+    };
 
     return Card(
       child: Padding(
@@ -848,14 +986,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? DailySpendChart(
                         days: result.report.byDay,
                         anomalies: result.anomalies,
-                        language: controller.language,
+                        language: lang,
                       )
                     : (_analyticsTab == 1
                         ? CategoryBreakdownChart(
                             report: result.report,
-                            language: controller.language,
+                            language: lang,
                           )
-                        : _buildTopNumbersList(context, result, isRu)),
+                        : _buildTopNumbersList(context, result, lang)),
               ),
             ),
           ],
@@ -867,9 +1005,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildCollapsibleSummaryCard(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final theme = Theme.of(context);
+    final tr = AppStrings.tr;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -893,9 +1032,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        isRu
-                            ? 'Подробнее: AI-резюме и проверка Decimal'
-                            : 'Толугураак: AI-корутунду жана Decimal текшерүү',
+                        tr(
+                          lang,
+                          ru: 'Подробнее: AI-резюме и проверка Decimal',
+                          ky: 'Толугураак: AI-корутунду жана Decimal текшерүү',
+                          en: 'Details: AI summary & Decimal audit',
+                        ),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -925,7 +1067,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   OutlinedButton.icon(
                     onPressed: controller.isLoadingLlm
                         ? null
-                        : () => _openLlmDialog(context, isRu),
+                        : () => _openLlmDialog(context, lang),
                     icon: controller.isLoadingLlm
                         ? const SizedBox(
                             width: 14,
@@ -933,7 +1075,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.auto_fix_high_rounded, size: 18),
-                    label: Text(isRu ? 'AI-пояснение (опц.)' : 'AI түшүндүрмө'),
+                    label: Text(
+                      tr(
+                        lang,
+                        ru: 'AI-пояснение (опц.)',
+                        ky: 'AI түшүндүрмө',
+                        en: 'AI explanation (opt.)',
+                      ),
+                    ),
                   ),
                   Chip(
                     avatar: Icon(
@@ -945,16 +1094,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     label: Text(
                       controller.llmUsedLlm
-                          ? (isRu
-                              ? 'LLM проверено валидатором фактов'
-                              : 'LLM фактылар менен текшерилди')
+                          ? tr(
+                              lang,
+                              ru: 'LLM проверено валидатором фактов',
+                              ky: 'LLM фактылар менен текшерилди',
+                              en: 'LLM verified by fact-validator',
+                            )
                           : controller.llmUsedFallback
-                              ? (isRu
-                                  ? 'LLM отклонено → точный шаблон'
-                                  : 'LLM четке кагылды → так шаблон')
-                              : (isRu
-                                  ? 'Детерминированный расчёт (Decimal)'
-                                  : 'Так эсептөө (Decimal)'),
+                              ? tr(
+                                  lang,
+                                  ru: 'LLM отклонено → точный шаблон',
+                                  ky: 'LLM четке кагылды → так шаблон',
+                                  en: 'LLM rejected → exact template',
+                                )
+                              : tr(
+                                  lang,
+                                  ru: 'Детерминированный расчёт (Decimal)',
+                                  ky: 'Так эсептөө (Decimal)',
+                                  en: 'Deterministic Decimal math',
+                                ),
                     ),
                   ),
                 ],
@@ -969,12 +1127,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildTopNumbersList(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final theme = Theme.of(context);
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final top = result.report.topNumbers;
     if (top.isEmpty) {
-      return Text(isRu ? 'Нет платных номеров' : 'Акы төлөнүүчү номерлер жок');
+      return Text(
+        tr(
+          lang,
+          ru: 'Нет платных номеров',
+          ky: 'Акы төлөнүүчү номерлер жок',
+          en: 'No paid numbers found',
+        ),
+      );
     }
     return Column(
       children: top
@@ -1002,11 +1169,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                '${item.count} ${isRu ? "списаний" : "жолу"}'
-                '${item.isShortCode ? (isRu ? " · Короткий номер" : " · Кыска номер") : ""}',
+                '${item.count} ${tr(lang, ru: "списаний", ky: "жолу", en: "charges")}'
+                '${item.isShortCode ? " · ${tr(lang, ru: "Короткий номер", ky: "Кыска номер", en: "Short code")}" : ""}',
               ),
               trailing: Text(
-                '${formatSom(item.totalSom)} сом',
+                '${formatSom(item.totalSom)} $cur',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -1021,24 +1188,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _showDroppedRowsDialog(
     BuildContext context,
     AnalysisResult result,
-    bool isRu,
+    AppLanguage lang,
   ) async {
+    final tr = AppStrings.tr;
     await showDialog<void>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
           title: Text(
-            isRu
-                ? 'Отброшенные строки (${result.droppedRows.length})'
-                : 'Өткөрүлгөн саптар (${result.droppedRows.length})',
+            tr(
+              lang,
+              ru: 'Отброшенные строки (${result.droppedRows.length})',
+              ky: 'Өткөрүлгөн саптар (${result.droppedRows.length})',
+              en: 'Dropped rows (${result.droppedRows.length})',
+            ),
           ),
           content: SizedBox(
             width: 560,
             child: result.droppedRows.isEmpty
                 ? Text(
-                    isRu
-                        ? 'Все строки CSV прошли строгую валидацию.'
-                        : 'Бардык саптар текшерүүдөн өттү.',
+                    tr(
+                      lang,
+                      ru: 'Все строки CSV прошли строгую валидацию.',
+                      ky: 'Бардык саптар текшерүүдөн өттү.',
+                      en: 'Every CSV row passed strict validation.',
+                    ),
                   )
                 : ListView.separated(
                     shrinkWrap: true,
@@ -1059,7 +1233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         title: Text(
-                          '${row.reason.wireName} · ${AppStrings.dropReasonLabel(row.reason, controller.language)}',
+                          '${row.reason.wireName} · ${AppStrings.dropReasonLabel(row.reason, lang)}',
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         subtitle: Text(
@@ -1083,7 +1257,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(isRu ? 'Закрыть' : 'Жабуу'),
+              child: Text(tr(lang, ru: 'Закрыть', ky: 'Жабуу', en: 'Close')),
             ),
           ],
         );
@@ -1091,7 +1265,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _openLlmDialog(BuildContext context, bool isRu) async {
+  Future<void> _openLlmDialog(BuildContext context, AppLanguage lang) async {
+    final tr = AppStrings.tr;
     var provider = controller.llmConfig.provider == LlmProvider.none
         ? LlmProvider.gemini
         : controller.llmConfig.provider;
@@ -1110,9 +1285,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           builder: (ctx, setState) {
             return AlertDialog(
               title: Text(
-                isRu
-                    ? 'Опциональное LLM-пояснение'
-                    : 'Кошумча LLM түшүндүрмө',
+                tr(
+                  lang,
+                  ru: 'Опциональное LLM-пояснение',
+                  ky: 'Кошумча LLM түшүндүрмө',
+                  en: 'Optional LLM explanation',
+                ),
               ),
               content: SizedBox(
                 width: 440,
@@ -1178,7 +1356,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(isRu ? 'Отмена' : 'Жокко чыгаруу'),
+                  child: Text(
+                    tr(lang, ru: 'Отмена', ky: 'Жокко чыгаруу', en: 'Cancel'),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -1194,7 +1374,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     );
                   },
-                  child: Text(isRu ? 'Сгенерировать' : 'Түзүү'),
+                  child: Text(
+                    tr(lang, ru: 'Сгенерировать', ky: 'Түзүү', en: 'Generate'),
+                  ),
                 ),
               ],
             );

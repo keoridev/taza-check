@@ -307,8 +307,7 @@ class LlmService {
     required LlmConfig config,
     required AppLanguage language,
   }) async {
-    final fallbackText =
-        language == AppLanguage.ru ? result.summaryRu : result.summaryKy;
+    final fallbackText = result.summary(language);
 
     if (config.provider == LlmProvider.none) {
       return LlmSummaryResult(
@@ -434,7 +433,11 @@ class LlmService {
   }
 
   String _buildPrompt(AnalysisResult result, AppLanguage language) {
-    final langName = language == AppLanguage.ru ? 'Russian' : 'Kyrgyz';
+    final langName = switch (language) {
+      AppLanguage.ru => 'Russian',
+      AppLanguage.ky => 'Kyrgyz',
+      AppLanguage.en => 'English',
+    };
     final anomalyLines = result.anomalies
         .map(
           (a) =>

@@ -36,9 +36,12 @@ class DailySpendChart extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            language == AppLanguage.ru
-                ? 'Нет данных по дням'
-                : 'Күндүк маалымат жок',
+            AppStrings.tr(
+              language,
+              ru: 'Нет данных по дням',
+              ky: 'Күндүк маалымат жок',
+              en: 'No daily spend data',
+            ),
           ),
         ),
       );
@@ -66,15 +69,21 @@ class DailySpendChart extends StatelessWidget {
           children: [
             _LegendDot(
               color: AppTheme.beelineYellow,
-              label: language == AppLanguage.ru
-                  ? 'Обычный день'
-                  : 'Кадимки күн',
+              label: AppStrings.tr(
+                language,
+                ru: 'Обычный день',
+                ky: 'Кадимки күн',
+                en: 'Normal day',
+              ),
             ),
             _LegendDot(
               color: AppTheme.coralRed,
-              label: language == AppLanguage.ru
-                  ? 'Всплеск (z > 3)'
-                  : 'Кескин өсүш (z > 3)',
+              label: AppStrings.tr(
+                language,
+                ru: 'Всплеск (z > 3)',
+                ky: 'Кескин өсүш (z > 3)',
+                en: 'Spike (z > 3)',
+              ),
             ),
           ],
         ),

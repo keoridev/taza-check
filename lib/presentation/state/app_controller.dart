@@ -96,7 +96,7 @@ class AppController extends ChangeNotifier {
     if (_activeSummaryText != null) return _activeSummaryText!;
     final result = activeResult;
     if (result == null) return '';
-    return _language == AppLanguage.ru ? result.summaryRu : result.summaryKy;
+    return result.summary(_language);
   }
 
   List<TariffRecommendation> get tariffRecommendations {

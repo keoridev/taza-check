@@ -73,61 +73,85 @@ class BeeMascot extends StatefulWidget {
     required AppLanguage language,
     TariffRecommendation? bestTariff,
   }) {
-    final isRu = language == AppLanguage.ru;
     final overcharge = result.totalOverchargeSom;
     final droppedCount = result.droppedRows.length;
 
-    final tips = isRu
-        ? <String>[
-            if (droppedCount > 0)
-              'Я отфильтровал $droppedCount сломанных строк из CSV, чтобы расчёт был на 100% честным.',
-            if (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
-              'Совет: смена тарифа на «${bestTariff.plan.name}» сэкономит ${formatSom(bestTariff.yearlySavingsSom)} сом в год!',
-            'Совет: никогда не отправляйте «ДА» на короткие номера — для отписки шлите «СТОП».',
-            'Совет: проверяйте ночные SMS с 00:00 до 06:00 — часто так маскируются платные подписки.',
-          ]
-        : <String>[
-            if (droppedCount > 0)
-              'Эсеп 100% так болушу үчүн CSV файлдан $droppedCount бузук сапты тазаладым.',
-            if (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
-              'Кеңеш: «${bestTariff.plan.name}» тарифине өтсөңүз, жылына ${formatSom(bestTariff.yearlySavingsSom)} сом үнөмдөйсүз!',
-            'Кеңеш: кыска номерлерге «ООБА» деп жооп бербеңиз — өчүрүү үчүн «СТОП» жөнөтүңүз.',
-            'Кеңеш: түнкү 00:00–06:00 аралыгындагы SMS списаниелерди текшерип туруңуз.',
-          ];
+    final tips = switch (language) {
+      AppLanguage.ru => <String>[
+          if (droppedCount > 0)
+            'Я отфильтровал $droppedCount сломанных строк из CSV, чтобы расчёт был на 100% честным.',
+          if (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
+            'Совет: смена тарифа на «${bestTariff.plan.name}» сэкономит ${formatSom(bestTariff.yearlySavingsSom)} сом в год!',
+          'Совет: никогда не отправляйте «ДА» на короткие номера — для отписки шлите «СТОП».',
+          'Совет: проверяйте ночные SMS с 00:00 до 06:00 — часто так маскируются платные подписки.',
+        ],
+      AppLanguage.ky => <String>[
+          if (droppedCount > 0)
+            'Эсеп 100% так болушу үчүн CSV файлдан $droppedCount бузук сапты тазаладым.',
+          if (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
+            'Кеңеш: «${bestTariff.plan.name}» тарифине өтсөңүз, жылына ${formatSom(bestTariff.yearlySavingsSom)} сом үнөмдөйсүз!',
+          'Кеңеш: кыска номерлерге «ООБА» деп жооп бербеңиз — өчүрүү үчүн «СТОП» жөнөтүңүз.',
+          'Кеңеш: түнкү 00:00–06:00 аралыгындагы SMS списаниелерди текшерип туруңуз.',
+        ],
+      AppLanguage.en => <String>[
+          if (droppedCount > 0)
+            'I filtered out $droppedCount corrupted CSV rows so your audit stays 100% accurate.',
+          if (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
+            'Tip: switching to "${bestTariff.plan.name}" saves ${formatSom(bestTariff.yearlySavingsSom)} KGS per year!',
+          'Tip: never reply YES to unknown short codes — text STOP to unsubscribe.',
+          'Tip: watch late-night SMS between 00:00 and 06:00 — paid subscriptions often hide there.',
+        ],
+    };
 
     if (overcharge > Decimal.zero && result.anomalies.isNotEmpty) {
-      // Pick the highest-overcharge line-item anomaly (fallback to first anomaly).
       final sorted = List<Anomaly>.from(result.anomalies)
         ..sort((a, b) => b.overchargeSom.compareTo(a.overchargeSom));
       final top = sorted.first;
       final numberLabel = (top.number != null && top.number!.isNotEmpty)
           ? top.number!
-          : (isRu ? 'неизвестный номер' : 'белгисиз номер');
+          : AppStrings.tr(
+              language,
+              ru: 'неизвестный номер',
+              ky: 'белгисиз номер',
+              en: 'unknown number',
+            );
       final amountText = formatSom(overcharge);
 
-      final msg = isRu
-          ? 'Осторожно! Номер $numberLabel тихо списывает деньги — можно вернуть $amountText сом!'
-          : 'Абайлаңыз! $numberLabel номери акча алып жатат — $amountText сом кайтарса болот!';
+      final msg = AppStrings.tr(
+        language,
+        ru: 'Осторожно! Номер $numberLabel тихо списывает деньги — можно вернуть $amountText сом!',
+        ky: 'Абайлаңыз! $numberLabel номери акча алып жатат — $amountText сом кайтарса болот!',
+        en: 'Watch out! $numberLabel is quietly draining your balance — you can reclaim $amountText KGS!',
+      );
       return (state: MascotState.alert, message: msg, tips: tips);
     }
 
     if (droppedCount > 0 &&
         (bestTariff == null || bestTariff.yearlySavingsSom <= Decimal.zero)) {
-      final msg = isRu
-          ? 'Я отфильтровал $droppedCount сломанных строк из CSV, чтобы расчёт был на 100% честным.'
-          : 'Эсеп 100% так болушу үчүн CSV файлдан $droppedCount бузук сапты тазаладым.';
+      final msg = AppStrings.tr(
+        language,
+        ru: 'Я отфильтровал $droppedCount сломанных строк из CSV, чтобы расчёт был на 100% честным.',
+        ky: 'Эсеп 100% так болушу үчүн CSV файлдан $droppedCount бузук сапты тазаладым.',
+        en: 'I filtered out $droppedCount broken CSV rows to keep your audit 100% accurate.',
+      );
       return (state: MascotState.detective, message: msg, tips: tips);
     }
 
     final savingsText =
         (bestTariff != null && bestTariff.yearlySavingsSom > Decimal.zero)
-            ? (isRu
-                ? ', а смена тарифа сэкономит ${formatSom(bestTariff.yearlySavingsSom)} сом в год'
-                : ', ал эми тарифти алмаштыруу жылына ${formatSom(bestTariff.yearlySavingsSom)} сом үнөмдөйт')
+            ? AppStrings.tr(
+                language,
+                ru: ', а смена тарифа сэкономит ${formatSom(bestTariff.yearlySavingsSom)} сом в год',
+                ky: ', ал эми тарифти алмаштыруу жылына ${formatSom(bestTariff.yearlySavingsSom)} сом үнөмдөйт',
+                en: ', and switching plans saves ${formatSom(bestTariff.yearlySavingsSom)} KGS/year',
+              )
             : '';
-    final msg = isRu
-        ? 'Всё чисто! Лишних подписок нет$savingsText.'
-        : 'Баары таза! Ашыкча жазылуулар жок$savingsText.';
+    final msg = AppStrings.tr(
+      language,
+      ru: 'Всё чисто! Лишних подписок нет$savingsText.',
+      ky: 'Баары таза! Ашыкча жазылуулар жок$savingsText.',
+      en: 'All clear! No unwanted subscriptions$savingsText.',
+    );
     return (state: MascotState.happy, message: msg, tips: tips);
   }
 
@@ -157,6 +181,13 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
     'Бузук саптарды тазалап жатам...',
     'Түнкү списаниелерди текшерип жатам...',
     'Тыйынына чейин так эсептеп жатам...',
+  ];
+
+  static const List<String> _loaderMessagesEn = <String>[
+    'Reading billing statement...',
+    'Filtering broken CSV rows...',
+    'Checking night charges & subscriptions...',
+    'Calculating exact Decimal totals...',
   ];
 
   @override
@@ -255,23 +286,37 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
     if (widget.message != null && widget.message!.isNotEmpty) {
       return widget.message!;
     }
-    final isRu = widget.language == AppLanguage.ru;
+    final lang = widget.language;
     return switch (widget.state) {
-      MascotState.loader => isRu
-          ? _loaderMessagesRu[_loaderStep]
-          : _loaderMessagesKy[_loaderStep],
-      MascotState.alert => isRu
-          ? 'Внимание! Найдены подозрительные списания.'
-          : 'Көңүл буруңуз! Шектүү списаниелер табылды.',
-      MascotState.happy => isRu
-          ? 'Всё чисто! Лишних подписок не обнаружено.'
-          : 'Баары таза! Ашыкча жазылуулар табылган жок.',
-      MascotState.detective => isRu
-          ? 'Я отфильтровал повреждённые строки из CSV для точного расчёта.'
-          : 'Так эсеп үчүн CSV файлдан бузук саптарды тазаладым.',
-      MascotState.seniorHelper => isRu
-          ? 'Не переживайте! Я проверил ваш баланс и всё объясню простыми словами.'
-          : 'Кабатыр болбоңуз! Балансыңызды текшердим, баарын жөнөкөй тилде түшүндүрөм.',
+      MascotState.loader => switch (lang) {
+          AppLanguage.ru => _loaderMessagesRu[_loaderStep],
+          AppLanguage.ky => _loaderMessagesKy[_loaderStep],
+          AppLanguage.en => _loaderMessagesEn[_loaderStep],
+        },
+      MascotState.alert => AppStrings.tr(
+          lang,
+          ru: 'Внимание! Найдены подозрительные списания.',
+          ky: 'Көңүл буруңуз! Шектүү списаниелер табылды.',
+          en: 'Heads up! Suspicious charges detected.',
+        ),
+      MascotState.happy => AppStrings.tr(
+          lang,
+          ru: 'Всё чисто! Лишних подписок не обнаружено.',
+          ky: 'Баары таза! Ашыкча жазылуулар табылган жок.',
+          en: 'All clear! No unwanted subscriptions found.',
+        ),
+      MascotState.detective => AppStrings.tr(
+          lang,
+          ru: 'Я отфильтровал повреждённые строки из CSV для точного расчёта.',
+          ky: 'Так эсеп үчүн CSV файлдан бузук саптарды тазаладым.',
+          en: 'I filtered broken CSV rows to guarantee exact totals.',
+        ),
+      MascotState.seniorHelper => AppStrings.tr(
+          lang,
+          ru: 'Не переживайте! Я проверил ваш баланс и всё объясню простыми словами.',
+          ky: 'Кабатыр болбоңуз! Балансыңызды текшердим, баарын жөнөкөй тилде түшүндүрөм.',
+          en: 'Don\'t worry! I checked your balance and will explain everything simply.',
+        ),
     };
   }
 
@@ -429,9 +474,12 @@ class _BeeMascotState extends State<BeeMascot> with TickerProviderStateMixin {
             Padding(
               padding: const EdgeInsets.only(top: 5),
               child: Text(
-                widget.language == AppLanguage.ru
-                    ? 'Нажмите на пчёлку для совета'
-                    : 'Кеңеш алуу үчүн аарыны басыңыз',
+                AppStrings.tr(
+                  widget.language,
+                  ru: 'Нажмите на пчёлку для совета',
+                  ky: 'Кеңеш алуу үчүн аарыны басыңыз',
+                  en: 'Tap the bee for a tip',
+                ),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: isSenior
                       ? AppTheme.comicOutline.withValues(alpha: 0.75)

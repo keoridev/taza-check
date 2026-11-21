@@ -79,7 +79,9 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
 
   @override
   Widget build(BuildContext context) {
-    final isRu = widget.language == AppLanguage.ru;
+    final lang = widget.language;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final result = widget.result;
     final gbUsed = divToDecimal(
       result.report.totalDataMb,
@@ -104,58 +106,123 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
     })>[
       (
         mascotState: MascotState.detective,
-        tag: isRu ? 'СЛАЙД 1 · МЕСЯЦ В ЦИФРАХ' : '1-СЛАЙД · БИР АЙ САНДАРДА',
-        title: isRu ? 'Твой месяц в цифрах' : 'Сенин айың сандарда',
-        metric: '${formatSom(result.report.totalSpendSom)} сом',
-        description: isRu
-            ? '${result.report.totalCallMinutes.toStringAsFixed(0)} мин звонков · '
-                '${gbUsed.toStringAsFixed(1)} ГБ интернета · '
-                'очищено ${result.droppedRows.length} битых строк CSV.'
-            : '${result.report.totalCallMinutes.toStringAsFixed(0)} мүн чалуу · '
-                '${gbUsed.toStringAsFixed(1)} ГБ интернет · '
-                '${result.droppedRows.length} бузук сап тазаланды.',
+        tag: tr(
+          lang,
+          ru: 'СЛАЙД 1 · МЕСЯЦ В ЦИФРАХ',
+          ky: '1-СЛАЙД · БИР АЙ САНДАРДА',
+          en: 'SLIDE 1 · MONTH IN NUMBERS',
+        ),
+        title: tr(
+          lang,
+          ru: 'Твой месяц в цифрах',
+          ky: 'Сенин айың сандарда',
+          en: 'Your month in numbers',
+        ),
+        metric: '${formatSom(result.report.totalSpendSom)} $cur',
+        description: tr(
+          lang,
+          ru: '${result.report.totalCallMinutes.toStringAsFixed(0)} мин звонков · '
+              '${gbUsed.toStringAsFixed(1)} ГБ интернета · '
+              'очищено ${result.droppedRows.length} битых строк CSV.',
+          ky: '${result.report.totalCallMinutes.toStringAsFixed(0)} мүн чалуу · '
+              '${gbUsed.toStringAsFixed(1)} ГБ интернет · '
+              '${result.droppedRows.length} бузук сап тазаланды.',
+          en: '${result.report.totalCallMinutes.toStringAsFixed(0)} min calls · '
+              '${gbUsed.toStringAsFixed(1)} GB data · '
+              'cleaned ${result.droppedRows.length} broken CSV rows.',
+        ),
         accent: AppTheme.beelineYellow,
       ),
       (
         mascotState: topThreat != null ? MascotState.alert : MascotState.happy,
-        tag: isRu ? 'СЛАЙД 2 · ГЛАВНАЯ УТЕЧКА' : '2-СЛАЙД · НЕГИЗГИ ЖОГОТУУ',
-        title: isRu ? 'Главный пожиратель баланса' : 'Балансты эң көп жеген',
+        tag: tr(
+          lang,
+          ru: 'СЛАЙД 2 · ГЛАВНАЯ УТЕЧКА',
+          ky: '2-СЛАЙД · НЕГИЗГИ ЖОГОТУУ',
+          en: 'SLIDE 2 · BIGGEST LEAK',
+        ),
+        title: tr(
+          lang,
+          ru: 'Главный пожиратель баланса',
+          ky: 'Балансты эң көп жеген',
+          en: 'Biggest balance drainer',
+        ),
         metric: topThreat != null
             ? (topThreat.number?.isNotEmpty == true
                 ? topThreat.number!
-                : '${formatSom(topThreat.costSom)} сом')
-            : (isRu ? '0 угроз' : '0 коркунуч'),
+                : '${formatSom(topThreat.costSom)} $cur')
+            : tr(lang, ru: '0 угроз', ky: '0 коркунуч', en: '0 threats'),
         description: topThreat != null
-            ? (isRu ? topThreat.explanationRu : topThreat.explanationKy)
-            : (isRu
-                ? 'Скрытых подписок и аномальных всплесков не обнаружено!'
-                : 'Жашыруун жазылуулар жана шектүү списаниелер табылган жок!'),
+            ? topThreat.explanation(lang)
+            : tr(
+                lang,
+                ru: 'Скрытых подписок и аномальных всплесков не обнаружено!',
+                ky: 'Жашыруун жазылуулар жана шектүү списаниелер табылган жок!',
+                en: 'No hidden subscriptions or abnormal spikes detected!',
+              ),
         accent: topThreat != null ? AppTheme.coralRed : AppTheme.electricGreen,
       ),
       (
         mascotState: MascotState.happy,
-        tag: isRu ? 'СЛАЙД 3 · ВОЗВРАТ И ВЫГОДА' : '3-СЛАЙД · КАЙТАРУУ ЖАНА ПАЙДА',
-        title: isRu ? 'Сколько можно вернуть' : 'Канча сом кайтарса болот',
-        metric: '${formatSom(result.totalOverchargeSom)} сом',
-        description: isRu
-            ? 'Плюс экономия на тарифе: ${formatSom(yearlyTariffSavings)} сом/год. '
-                'Итоговая годовая выгода: ${formatSom(combinedBenefit)} сом!'
-            : 'Тарифтен үнөм: ${formatSom(yearlyTariffSavings)} сом/жыл. '
-                'Жалпы жылдык пайда: ${formatSom(combinedBenefit)} сом!',
+        tag: tr(
+          lang,
+          ru: 'СЛАЙД 3 · ВОЗВРАТ И ВЫГОДА',
+          ky: '3-СЛАЙД · КАЙТАРУУ ЖАНА ПАЙДА',
+          en: 'SLIDE 3 · REFUND & SAVINGS',
+        ),
+        title: tr(
+          lang,
+          ru: 'Сколько можно вернуть',
+          ky: 'Канча сом кайтарса болот',
+          en: 'How much you can reclaim',
+        ),
+        metric: '${formatSom(result.totalOverchargeSom)} $cur',
+        description: tr(
+          lang,
+          ru: 'Плюс экономия на тарифе: ${formatSom(yearlyTariffSavings)} сом/год. '
+              'Итоговая годовая выгода: ${formatSom(combinedBenefit)} сом!',
+          ky: 'Тарифтен үнөм: ${formatSom(yearlyTariffSavings)} сом/жыл. '
+              'Жалпы жылдык пайда: ${formatSom(combinedBenefit)} сом!',
+          en: 'Plus plan savings: ${formatSom(yearlyTariffSavings)} KGS/year. '
+              'Total yearly benefit: ${formatSom(combinedBenefit)} KGS!',
+        ),
         accent: AppTheme.electricGreen,
       ),
       (
         mascotState: result.totalOverchargeSom > Decimal.zero
             ? MascotState.alert
             : MascotState.happy,
-        tag: isRu ? 'СЛАЙД 4 · ВЕРДИКТ ЗАЩИТЫ' : '4-СЛАЙД · КОРГОО КОРУТУНДУСУ',
-        title: isRu ? 'Вердикт защиты' : 'Коргоо чечими',
+        tag: tr(
+          lang,
+          ru: 'СЛАЙД 4 · ВЕРДИКТ ЗАЩИТЫ',
+          ky: '4-СЛАЙД · КОРГОО КОРУТУНДУСУ',
+          en: 'SLIDE 4 · AUDIT VERDICT',
+        ),
+        title: tr(
+          lang,
+          ru: 'Вердикт защиты',
+          ky: 'Коргоо чечими',
+          en: 'Protection verdict',
+        ),
         metric: result.totalOverchargeSom > Decimal.zero
-            ? (isRu ? 'Пора действовать!' : 'Аракет кылуу керек!')
-            : (isRu ? 'Баланс под щитом' : 'Баланс коргоодо'),
-        description: isRu
-            ? 'Сформируйте юридическую претензию в 1 клик или отправьте отчёт семье.'
-            : '1 баскыч менен юридикалык арыз түзүңүз же үй-бүлөгө жөнөтүңүз.',
+            ? tr(
+                lang,
+                ru: 'Пора действовать!',
+                ky: 'Аракет кылуу керек!',
+                en: 'Time to act!',
+              )
+            : tr(
+                lang,
+                ru: 'Баланс под щитом',
+                ky: 'Баланс коргоодо',
+                en: 'Balance protected',
+              ),
+        description: tr(
+          lang,
+          ru: 'Сформируйте юридическую претензию в 1 клик или отправьте отчёт семье.',
+          ky: '1 баскыч менен юридикалык арыз түзүңүз же үй-бүлөгө жөнөтүңүз.',
+          en: 'Generate a legal dispute claim in 1 tap or share this recap with family.',
+        ),
         accent: AppTheme.beelineYellow,
       ),
     ];
@@ -254,58 +321,70 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                             ),
                           ],
                         ),
-                        const Spacer(),
-                        Center(
-                          child: BeeMascot(
-                            state: slide.mascotState,
-                            size: 112,
-                            showBubble: false,
-                            language: widget.language,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          slide.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            slide.metric,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: slide.accent,
-                              fontSize: 40,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -1,
+                        Expanded(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  BeeMascot(
+                                    state: slide.mascotState,
+                                    size: 112,
+                                    showBubble: false,
+                                    language: widget.language,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    slide.title,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      slide.metric,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: slide.accent,
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -1,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.carbonSurface
+                                          .withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: AppTheme.carbonBorder,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      slide.description,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppTheme.carbonSurface.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: AppTheme.carbonBorder),
-                          ),
-                          child: Text(
-                            slide.description,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              height: 1.45,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
+                        const SizedBox(height: 12),
                         if (_index == _totalSlides - 1) ...[
                           FilledButton.icon(
                             onPressed: () {
@@ -314,9 +393,12 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                             },
                             icon: const Icon(Icons.description_rounded),
                             label: Text(
-                              isRu
-                                  ? 'Сформировать претензию'
-                                  : 'Арыз түзүү',
+                              tr(
+                                lang,
+                                ru: 'Сформировать претензию',
+                                ky: 'Арыз түзүү',
+                                en: 'Generate dispute claim',
+                              ),
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -326,9 +408,12 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                               side: const BorderSide(color: AppTheme.beelineYellow),
                             ),
                             onPressed: () async {
-                              final shareText = isRu
-                                  ? 'Отчёт «Где мои деньги?»: траты ${formatSom(result.report.totalSpendSom)} сом, к возврату ${formatSom(result.totalOverchargeSom)} сом.'
-                                  : '«Менин акчам кайда?» отчёту: чыгым ${formatSom(result.report.totalSpendSom)} сом, кайтаруу ${formatSom(result.totalOverchargeSom)} сом.';
+                              final shareText = tr(
+                                lang,
+                                ru: 'Отчёт «Где мои деньги?»: траты ${formatSom(result.report.totalSpendSom)} сом, к возврату ${formatSom(result.totalOverchargeSom)} сом.',
+                                ky: '«Менин акчам кайда?» отчёту: чыгым ${formatSom(result.report.totalSpendSom)} сом, кайтаруу ${formatSom(result.totalOverchargeSom)} сом.',
+                                en: '"Where is my money?" audit: spent ${formatSom(result.report.totalSpendSom)} KGS, refundable ${formatSom(result.totalOverchargeSom)} KGS.',
+                              );
                               await Clipboard.setData(
                                 ClipboardData(text: shareText),
                               );
@@ -336,9 +421,12 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isRu
-                                          ? 'Итоги скопированы для семейного чата'
-                                          : 'Жыйынтык үй-бүлөлүк чат үчүн көчүрүлдү',
+                                      tr(
+                                        lang,
+                                        ru: 'Итоги скопированы для семейного чата',
+                                        ky: 'Жыйынтык үй-бүлөлүк чат үчүн көчүрүлдү',
+                                        en: 'Recap copied for your family chat',
+                                      ),
                                     ),
                                   ),
                                 );
@@ -346,9 +434,12 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                             },
                             icon: const Icon(Icons.share_rounded),
                             label: Text(
-                              isRu
-                                  ? 'Поделиться в семейный чат'
-                                  : 'Үй-бүлөлүк чатка бөлүшүү',
+                              tr(
+                                lang,
+                                ru: 'Поделиться в семейный чат',
+                                ky: 'Үй-бүлөлүк чатка бөлүшүү',
+                                en: 'Share to family chat',
+                              ),
                             ),
                           ),
                         ] else
@@ -357,11 +448,15 @@ class _StoriesRecapViewState extends State<_StoriesRecapView> {
                             children: [
                               TextButton(
                                 onPressed: _index > 0 ? _prev : null,
-                                child: Text(isRu ? '← Назад' : '← Артка'),
+                                child: Text(
+                                  tr(lang, ru: '← Назад', ky: '← Артка', en: '← Back'),
+                                ),
                               ),
                               FilledButton(
                                 onPressed: _next,
-                                child: Text(isRu ? 'Далее →' : 'Кийинки →'),
+                                child: Text(
+                                  tr(lang, ru: 'Далее →', ky: 'Кийинки →', en: 'Next →'),
+                                ),
                               ),
                             ],
                           ),

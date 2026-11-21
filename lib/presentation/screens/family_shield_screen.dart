@@ -24,7 +24,9 @@ class FamilyShieldScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final members = controller.familyMembers;
     final flags = controller.reputationFlags;
 
@@ -40,17 +42,23 @@ class FamilyShieldScreen extends StatelessWidget {
             },
             secondary: const Icon(Icons.accessibility_new_rounded, size: 30),
             title: Text(
-              isRu
-                  ? 'Режим для родителей / бабушки'
-                  : 'Ата-эне / чоң эне режими',
+              tr(
+                lang,
+                ru: 'Режим для родителей / бабушки',
+                ky: 'Ата-эне / чоң эне режими',
+                en: 'Parents & Grandma mode',
+              ),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             subtitle: Text(
-              isRu
-                  ? 'Увеличенный шрифт, высокий контраст и простые кнопки отключения'
-                  : 'Чоң шрифт, жогорку контраст жана жөнөкөй баскычтар',
+              tr(
+                lang,
+                ru: 'Увеличенный шрифт, высокий контраст и простые кнопки отключения',
+                ky: 'Чоң шрифт, жогорку контраст жана жөнөкөй баскычтар',
+                en: 'Extra-large text, high contrast, and simple 1-tap cancel buttons',
+              ),
             ),
           ),
         ),
@@ -130,33 +138,36 @@ class FamilyShieldScreen extends StatelessWidget {
               runSpacing: 10,
               children: [
                 bentoStat(
-                  label: isRu ? 'Траты семьи' : 'Үй-бүлө',
+                  label: tr(lang, ru: 'Траты семьи', ky: 'Үй-бүлө', en: 'Family spend'),
                   valueWidget: AnimatedSomText(
                     amount: controller.totalFamilySpendSom,
+                    suffix: ' $cur',
                     style: valStyle,
                   ),
                   accent: AppTheme.beelineYellow,
                 ),
                 bentoStat(
-                  label: isRu ? 'Переплата' : 'Ашыкча',
+                  label: tr(lang, ru: 'Переплата', ky: 'Ашыкча', en: 'Overcharge'),
                   valueWidget: AnimatedSomText(
                     amount: controller.totalFamilyOverchargeSom,
+                    suffix: ' $cur',
                     style: valStyle,
                   ),
                   accent: AppTheme.coralRed,
                 ),
                 bentoStat(
-                  label: isRu ? 'Утечка / год' : 'Жылдык жоготуу',
+                  label: tr(lang, ru: 'Утечка / год', ky: 'Жылдык жоготуу', en: 'Leak / year'),
                   valueWidget: AnimatedSomText(
                     amount: controller.totalFamilyAnnualLeakSom,
+                    suffix: ' $cur',
                     style: valStyle,
                   ),
                   accent: AppTheme.warmAmber,
                 ),
                 bentoStat(
-                  label: isRu ? 'Защищено' : 'Корголгон',
+                  label: tr(lang, ru: 'Защищено', ky: 'Корголгон', en: 'Protected'),
                   valueWidget: Text(
-                    '${members.length} ${isRu ? "номеров" : "номер"}',
+                    '${members.length} ${tr(lang, ru: "номеров", ky: "номер", en: "lines")}',
                     maxLines: 1,
                     style: valStyle,
                   ),
@@ -168,7 +179,12 @@ class FamilyShieldScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          isRu ? 'Кросс-аккаунт угрозы' : 'Үй-бүлөлүк коркунучтар',
+          tr(
+            lang,
+            ru: 'Кросс-аккаунт угрозы',
+            ky: 'Үй-бүлөлүк коркунучтар',
+            en: 'Cross-account threats',
+          ),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -179,17 +195,25 @@ class FamilyShieldScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                isRu
-                    ? 'Массовых списаний с общих коротких номеров не выявлено.'
-                    : 'Орток кыска номерлерден массалык акча алуу табылган жок.',
+                tr(
+                  lang,
+                  ru: 'Массовых списаний с общих коротких номеров не выявлено.',
+                  ky: 'Орток кыска номерлерден массалык акча алуу табылган жок.',
+                  en: 'No mass charges from shared short codes detected.',
+                ),
               ),
             ),
           )
         else
-          ...flags.map((flag) => _buildFlagCard(context, flag, isRu)),
+          ...flags.map((flag) => _buildFlagCard(context, flag, lang)),
         const SizedBox(height: 20),
         Text(
-          isRu ? 'Профили семьи' : 'Үй-бүлө мүчөлөрү',
+          tr(
+            lang,
+            ru: 'Профили семьи',
+            ky: 'Үй-бүлө мүчөлөрү',
+            en: 'Family profiles',
+          ),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -263,7 +287,7 @@ class FamilyShieldScreen extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                '${res.anomalies.length} ${isRu ? "аном." : "аном."}',
+                                '${res.anomalies.length} ${tr(lang, ru: "аном.", ky: "аном.", en: "alerts")}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 12,
@@ -272,7 +296,12 @@ class FamilyShieldScreen extends StatelessWidget {
                             ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            tooltip: isRu ? 'Загрузить CSV' : 'CSV жүктөө',
+                            tooltip: tr(
+                              lang,
+                              ru: 'Загрузить CSV',
+                              ky: 'CSV жүктөө',
+                              en: 'Load CSV',
+                            ),
                             onPressed: () =>
                                 controller.loadCustomCsvForMember(member.id),
                             icon: const Icon(Icons.upload_file_rounded, size: 20),
@@ -297,8 +326,8 @@ class FamilyShieldScreen extends StatelessWidget {
                           if (res != null)
                             Expanded(
                               child: Text(
-                                '${formatSom(res.report.totalSpendSom)} сом · '
-                                '${isRu ? "переплата" : "ашыкча"} ${formatSom(over)} сом',
+                                '${formatSom(res.report.totalSpendSom)} $cur · '
+                                '${tr(lang, ru: "переплата", ky: "ашыкча", en: "overcharge")} ${formatSom(over)} $cur',
                                 textAlign: TextAlign.end,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -326,8 +355,10 @@ class FamilyShieldScreen extends StatelessWidget {
   Widget _buildFlagCard(
     BuildContext context,
     FamilyReputationFlag flag,
-    bool isRu,
+    AppLanguage lang,
   ) {
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Card(
@@ -349,14 +380,14 @@ class FamilyShieldScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${isRu ? "Короткий номер" : "Кыска номер"} ${flag.shortCode}',
+                      '${tr(lang, ru: "Короткий номер", ky: "Кыска номер", en: "Short code")} ${flag.shortCode}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                     ),
                   ),
                   Text(
-                    '-${formatSom(flag.totalFamilyLossSom)} сом',
+                    '-${formatSom(flag.totalFamilyLossSom)} $cur',
                     style: const TextStyle(
                       color: AppTheme.coralRed,
                       fontWeight: FontWeight.w800,
@@ -371,8 +402,8 @@ class FamilyShieldScreen extends StatelessWidget {
                 state: MascotState.alert,
                 compact: true,
                 size: 58,
-                language: controller.language,
-                message: isRu ? flag.explanationRu : flag.explanationKy,
+                language: lang,
+                message: flag.explanation(lang),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -393,9 +424,12 @@ class FamilyShieldScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              isRu
-                                  ? 'Скопировано: СТОП (отправьте на ${flag.shortCode})'
-                                  : 'Көчүрүлдү: СТОП (${flag.shortCode} номерине жөнөтүңүз)',
+                              tr(
+                                lang,
+                                ru: 'Скопировано: СТОП (отправьте на ${flag.shortCode})',
+                                ky: 'Көчүрүлдү: СТОП (${flag.shortCode} номерине жөнөтүңүз)',
+                                en: 'Copied: STOP (send to ${flag.shortCode})',
+                              ),
                             ),
                           ),
                         );

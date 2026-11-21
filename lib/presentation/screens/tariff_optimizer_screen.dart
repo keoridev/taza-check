@@ -29,11 +29,20 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final result = controller.activeResult;
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
 
     if (result == null) {
       return Center(
-        child: Text(isRu ? 'Нет данных для подбора' : 'Маалымат жок'),
+        child: Text(
+          tr(
+            lang,
+            ru: 'Нет данных для подбора',
+            ky: 'Маалымат жок',
+            en: 'No usage data available',
+          ),
+        ),
       );
     }
 
@@ -59,9 +68,12 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isRu
-                      ? 'Фактическое потребление за ${report.periodDays} дн.'
-                      : '${report.periodDays} күндө иш жүзүндөгү сарптоо',
+                  tr(
+                    lang,
+                    ru: 'Фактическое потребление за ${report.periodDays} дн.',
+                    ky: '${report.periodDays} күндө иш жүзүндөгү сарптоо',
+                    en: 'Actual usage over ${report.periodDays} days',
+                  ),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -74,12 +86,14 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     Chip(
                       avatar: const Icon(Icons.call_rounded, size: 16),
                       label: Text(
-                        '${report.totalCallMinutes.toStringAsFixed(1)} ${isRu ? "мин" : "мүн"}',
+                        '${report.totalCallMinutes.toStringAsFixed(1)} ${tr(lang, ru: "мин", ky: "мүн", en: "min")}',
                       ),
                     ),
                     Chip(
                       avatar: const Icon(Icons.wifi_rounded, size: 16),
-                      label: Text('${gbUsed.toStringAsFixed(2)} ГБ'),
+                      label: Text(
+                        '${gbUsed.toStringAsFixed(2)} ${tr(lang, ru: "ГБ", ky: "ГБ", en: "GB")}',
+                      ),
                     ),
                     Chip(
                       avatar: const Icon(Icons.sms_rounded, size: 16),
@@ -87,9 +101,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     ),
                     Chip(
                       avatar: const Icon(Icons.payments_rounded, size: 16),
-                      label: Text(
-                        '${formatSom(report.totalSpendSom)} сом',
-                      ),
+                      label: Text('${formatSom(report.totalSpendSom)} $cur'),
                     ),
                   ],
                 ),
@@ -117,9 +129,12 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isRu
-                                  ? 'Рекомендуем · Лучший тариф · ${best.plan.operatorName}'
-                                  : 'Сунуш · Эң пайдалуу тариф · ${best.plan.operatorName}',
+                              tr(
+                                lang,
+                                ru: 'Рекомендуем · Лучший тариф · ${best.plan.operatorName}',
+                                ky: 'Сунуш · Эң пайдалуу тариф · ${best.plan.operatorName}',
+                                en: 'Recommended · Best plan · ${best.plan.operatorName}',
+                              ),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelMedium
@@ -150,7 +165,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${formatSom(best.estimatedMonthlyCostSom)} сом/${isRu ? "мес" : "ай"}',
+                          '${formatSom(best.estimatedMonthlyCostSom)} $cur/${tr(lang, ru: "мес", ky: "ай", en: "mo")}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -160,7 +175,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '+${formatSom(best.yearlySavingsSom)} сом/${isRu ? "год" : "жыл"}',
+                        '+${formatSom(best.yearlySavingsSom)} $cur/${tr(lang, ru: "год", ky: "жыл", en: "yr")}',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: AppTheme.electricGreen,
@@ -174,7 +189,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     context,
                     currentSom: report.totalSpendSom,
                     optimalSom: best.estimatedMonthlyCostSom,
-                    isRu: isRu,
+                    lang: lang,
                   ),
                 ],
               ),
@@ -194,7 +209,11 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     avatar: op == 'ALL'
                         ? null
                         : OperatorLogo(operatorName: op, size: 18),
-                    label: Text(op == 'ALL' ? (isRu ? 'Все' : 'Баары') : op),
+                    label: Text(
+                      op == 'ALL'
+                          ? tr(lang, ru: 'Все', ky: 'Баары', en: 'All')
+                          : op,
+                    ),
                     onSelected: (_) {
                       HapticFeedback.selectionClick();
                       setState(() => _selectedOperator = op);
@@ -205,7 +224,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        ...filtered.map((rec) => _buildTariffCard(context, rec, isRu)),
+        ...filtered.map((rec) => _buildTariffCard(context, rec, lang)),
       ],
     );
   }
@@ -213,9 +232,11 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
   Widget _buildTariffCard(
     BuildContext context,
     TariffRecommendation rec,
-    bool isRu,
+    AppLanguage lang,
   ) {
     final theme = Theme.of(context);
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final hasSavings = rec.yearlySavingsSom > Decimal.zero;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -246,7 +267,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${formatSom(rec.estimatedMonthlyCostSom)} сом/${isRu ? "мес" : "ай"}',
+                    '${formatSom(rec.estimatedMonthlyCostSom)} $cur/${tr(lang, ru: "мес", ky: "ай", en: "mo")}',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -259,10 +280,14 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                 runSpacing: 6,
                 children: [
                   Text(
-                    '${isRu ? "Абонплата" : "Айлык акы"}: ${formatSom(rec.plan.monthlyFeeSom)} сом',
+                    '${tr(lang, ru: "Абонплата", ky: "Айлык акы", en: "Monthly fee")}: ${formatSom(rec.plan.monthlyFeeSom)} $cur',
                   ),
-                  Text('· ${rec.plan.includedMinutes} ${isRu ? "мин" : "мүн"}'),
-                  Text('· ${rec.plan.includedGb.toStringAsFixed(0)} ГБ'),
+                  Text(
+                    '· ${rec.plan.includedMinutes} ${tr(lang, ru: "мин", ky: "мүн", en: "min")}',
+                  ),
+                  Text(
+                    '· ${rec.plan.includedGb.toStringAsFixed(0)} ${tr(lang, ru: "ГБ", ky: "ГБ", en: "GB")}',
+                  ),
                   Text('· ${rec.plan.includedSms} SMS'),
                 ],
               ),
@@ -275,7 +300,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                     Chip(
                       backgroundColor: AppTheme.electricGreen.withValues(alpha: 0.14),
                       label: Text(
-                        '${isRu ? "Экономия" : "Үнөм"}: ${formatSom(rec.yearlySavingsSom)} сом/${isRu ? "год" : "жыл"}',
+                        '${tr(lang, ru: "Экономия", ky: "Үнөм", en: "Savings")}: ${formatSom(rec.yearlySavingsSom)} $cur/${tr(lang, ru: "год", ky: "жыл", en: "yr")}',
                         style: const TextStyle(
                           color: AppTheme.electricGreen,
                           fontWeight: FontWeight.w700,
@@ -285,8 +310,18 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                   Chip(
                     label: Text(
                       rec.fitsMinutes && rec.fitsData
-                          ? (isRu ? 'Пакет покрывает трафик' : 'Пакет жетиштүү')
-                          : (isRu ? 'С учётом доплаты сверх пакета' : 'Кошумча төлөм менен'),
+                          ? tr(
+                              lang,
+                              ru: 'Пакет покрывает трафик',
+                              ky: 'Пакет жетиштүү',
+                              en: 'Plan covers your usage',
+                            )
+                          : tr(
+                              lang,
+                              ru: 'С учётом доплаты сверх пакета',
+                              ky: 'Кошумча төлөм менен',
+                              en: 'Includes overage estimate',
+                            ),
                     ),
                   ),
                 ],
@@ -309,9 +344,12 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            isRu
-                                ? 'USSD-код $ussd для «${rec.plan.name}» скопирован!'
-                                : '«${rec.plan.name}» үчүн $ussd коду көчүрүлдү!',
+                            tr(
+                              lang,
+                              ru: 'USSD-код $ussd для «${rec.plan.name}» скопирован!',
+                              ky: '«${rec.plan.name}» үчүн $ussd коду көчүрүлдү!',
+                              en: 'USSD code $ussd for "${rec.plan.name}" copied!',
+                            ),
                           ),
                         ),
                       );
@@ -319,9 +357,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
                   },
                   icon: const Icon(Icons.dialpad_rounded, size: 16),
                   label: Text(
-                    isRu
-                        ? 'Подключить · ${_ussdForPlan(rec.plan)}'
-                        : 'Кошуу · ${_ussdForPlan(rec.plan)}',
+                    '${tr(lang, ru: "Подключить", ky: "Кошуу", en: "Activate")} · ${_ussdForPlan(rec.plan)}',
                   ),
                 ),
               ),
@@ -344,8 +380,11 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
     BuildContext context, {
     required Decimal currentSom,
     required Decimal optimalSom,
-    required bool isRu,
+    required AppLanguage lang,
   }) {
+    final tr = AppStrings.tr;
+    final curUnit = AppStrings.currency(lang);
+    final moUnit = tr(lang, ru: 'мес', ky: 'ай', en: 'mo');
     final cur = currentSom.toDouble();
     final opt = optimalSom.toDouble();
     final ratio = cur > 0 ? (opt / cur).clamp(0.08, 1.0) : 1.0;
@@ -368,9 +407,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
             children: [
               Expanded(
                 child: Text(
-                  isRu
-                      ? 'Сейчас: ${formatSom(currentSom)} сом/мес'
-                      : 'Азыр: ${formatSom(currentSom)} сом/ай',
+                  '${tr(lang, ru: "Сейчас", ky: "Азыр", en: "Current")}: ${formatSom(currentSom)} $curUnit/$moUnit',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -403,9 +440,7 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isRu
-                ? 'С оптимальным тарифом: ${formatSom(optimalSom)} сом/мес'
-                : 'Оптималдуу тариф менен: ${formatSom(optimalSom)} сом/ай',
+            '${tr(lang, ru: "С оптимальным тарифом", ky: "Оптималдуу тариф менен", en: "With optimal plan")}: ${formatSom(optimalSom)} $curUnit/$moUnit',
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 12,

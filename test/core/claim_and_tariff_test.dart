@@ -68,6 +68,19 @@ void main() {
       expect(claim, contains('Керектөөчүлөрдүн укуктарын коргоо жөнүндө'));
       expect(claim, contains('165.00 сом'));
     });
+
+    test('generates EN legal claim citing Kyrgyz Republic Consumer Protection Law', () {
+      final claim = generator.generateClaim(
+        subscriber: sub,
+        selectedAnomalies: sampleAnomalies,
+        language: AppLanguage.en,
+        date: DateTime.utc(2026, 10, 1),
+      );
+
+      expect(claim, contains('On Consumer Rights Protection'));
+      expect(claim, contains('165.00 KGS'));
+      expect(claim, contains('+996700112233'));
+    });
   });
 
   group('TariffOptimizer', () {

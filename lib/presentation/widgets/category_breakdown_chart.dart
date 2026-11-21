@@ -43,9 +43,12 @@ class CategoryBreakdownChart extends StatelessWidget {
           child: nonZero.isEmpty
               ? Center(
                   child: Text(
-                    language == AppLanguage.ru
-                        ? 'Нет расходов'
-                        : 'Чыгымдар жок',
+                    AppStrings.tr(
+                      language,
+                      ru: 'Нет расходов',
+                      ky: 'Чыгымдар жок',
+                      en: 'No expenses',
+                    ),
                   ),
                 )
               : PieChart(
@@ -102,7 +105,7 @@ class CategoryBreakdownChart extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${formatSom(amount)} сом (${pct.toStringAsFixed(1)}%)',
+                  '${formatSom(amount)} ${AppStrings.currency(language)} (${pct.toStringAsFixed(1)}%)',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontFeatures: const [FontFeature.tabularFigures()],

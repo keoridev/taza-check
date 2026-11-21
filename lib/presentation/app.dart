@@ -109,7 +109,7 @@ class _MainShell extends StatelessWidget {
     final members = controller.familyMembers;
     final activeMember = controller.activeMember;
     final theme = Theme.of(context);
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
 
     final body = switch (controller.selectedTabIndex) {
       0 => DashboardScreen(controller: controller),
@@ -218,7 +218,12 @@ class _MainShell extends StatelessWidget {
         actions: [
           if (members.isNotEmpty)
             PopupMenuButton<String>(
-              tooltip: isRu ? 'Выбрать абонента' : 'Абонентти тандоо',
+              tooltip: AppStrings.tr(
+                lang,
+                ru: 'Выбрать абонента',
+                ky: 'Абонентти тандоо',
+                en: 'Switch profile',
+              ),
               onSelected: (id) {
                 HapticFeedback.selectionClick();
                 controller.selectMember(id);
@@ -272,7 +277,12 @@ class _MainShell extends StatelessWidget {
           const SizedBox(width: 6),
           // Circular button 1: CSV Upload (+)
           IconButton(
-            tooltip: isRu ? 'Загрузить CSV' : 'CSV жүктөө',
+            tooltip: AppStrings.tr(
+              lang,
+              ru: 'Загрузить CSV',
+              ky: 'CSV жүктөө',
+              en: 'Load CSV',
+            ),
             onPressed: controller.loadCustomCsvForActiveMember,
             style: IconButton.styleFrom(
               backgroundColor: circleBtnBg,
@@ -282,18 +292,27 @@ class _MainShell extends StatelessWidget {
             icon: const Icon(Icons.add_rounded, size: 20),
           ),
           const SizedBox(width: 6),
-          // Circular button 2: Preferences (Theme / Language / Senior Mode)
+          // Circular button 2: Preferences (Language RU/KY/EN, Theme, Senior Mode, Demo)
           PopupMenuButton<String>(
-            tooltip: isRu ? 'Настройки' : 'Жөндөөлөр',
+            tooltip: AppStrings.tr(
+              controller.language,
+              ru: 'Настройки',
+              ky: 'Жөндөөлөр',
+              en: 'Settings',
+            ),
             onSelected: (action) {
               switch (action) {
-                case 'lang':
-                  controller.setLanguage(
-                    controller.language == AppLanguage.ru
-                        ? AppLanguage.ky
-                        : AppLanguage.ru,
-                  );
+                case 'lang_ru':
+                  HapticFeedback.selectionClick();
+                  controller.setLanguage(AppLanguage.ru);
+                case 'lang_ky':
+                  HapticFeedback.selectionClick();
+                  controller.setLanguage(AppLanguage.ky);
+                case 'lang_en':
+                  HapticFeedback.selectionClick();
+                  controller.setLanguage(AppLanguage.en);
                 case 'theme':
+                  HapticFeedback.selectionClick();
                   controller.toggleThemeMode();
                 case 'senior':
                   HapticFeedback.mediumImpact();
@@ -304,21 +323,54 @@ class _MainShell extends StatelessWidget {
             },
             itemBuilder: (_) => [
               PopupMenuItem<String>(
-                value: 'lang',
+                value: 'lang_ru',
                 child: Row(
                   children: [
-                    const Icon(Icons.translate_rounded, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        controller.language == AppLanguage.ru
-                            ? 'КЫР (Кыргызча)'
-                            : 'РУС (Русский)',
-                      ),
+                    Icon(
+                      Icons.translate_rounded,
+                      size: 18,
+                      color: controller.language == AppLanguage.ru
+                          ? AppTheme.beelineYellow
+                          : null,
                     ),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('РУС (Русский)')),
                   ],
                 ),
               ),
+              PopupMenuItem<String>(
+                value: 'lang_ky',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.translate_rounded,
+                      size: 18,
+                      color: controller.language == AppLanguage.ky
+                          ? AppTheme.beelineYellow
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('КЫР (Кыргызча)')),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'lang_en',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.translate_rounded,
+                      size: 18,
+                      color: controller.language == AppLanguage.en
+                          ? AppTheme.beelineYellow
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('ENG (English)')),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem<String>(
                 value: 'theme',
                 child: Row(
@@ -333,8 +385,18 @@ class _MainShell extends StatelessWidget {
                     Expanded(
                       child: Text(
                         controller.themeMode == ThemeMode.dark
-                            ? (isRu ? 'Светлая тема' : 'Жарык тема')
-                            : (isRu ? 'Тёмная тема' : 'Караңгы тема'),
+                            ? AppStrings.tr(
+                                controller.language,
+                                ru: 'Светлая тема',
+                                ky: 'Жарык тема',
+                                en: 'Light theme',
+                              )
+                            : AppStrings.tr(
+                                controller.language,
+                                ru: 'Тёмная тема',
+                                ky: 'Караңгы тема',
+                                en: 'Dark theme',
+                              ),
                       ),
                     ),
                   ],
@@ -348,9 +410,12 @@ class _MainShell extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        isRu
-                            ? 'Режим для родителей'
-                            : 'Ата-эне режими',
+                        AppStrings.tr(
+                          controller.language,
+                          ru: 'Режим для родителей',
+                          ky: 'Ата-эне режими',
+                          en: 'Parents & Grandma mode',
+                        ),
                       ),
                     ),
                   ],
@@ -363,7 +428,14 @@ class _MainShell extends StatelessWidget {
                     const Icon(Icons.refresh_rounded, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(isRu ? 'Загрузить демо' : 'Демо жүктөө'),
+                      child: Text(
+                        AppStrings.tr(
+                          controller.language,
+                          ru: 'Загрузить демо',
+                          ky: 'Демо жүктөө',
+                          en: 'Load demo family',
+                        ),
+                      ),
                     ),
                   ],
                 ),

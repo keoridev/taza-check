@@ -9,6 +9,7 @@ import '../../domain/entities/anomaly.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
 import 'bee_mascot.dart';
+import 'guide_stories_modal.dart';
 
 /// High-contrast, large-font simplified dashboard for parents & grandparents.
 class SeniorDashboardView extends StatelessWidget {
@@ -24,7 +25,9 @@ class SeniorDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final overcharge = result.totalOverchargeSom;
     final hasOvercharge = overcharge > Decimal.zero;
     final memberName = controller.activeMember?.name ?? '';
@@ -43,22 +46,25 @@ class SeniorDashboardView extends StatelessWidget {
             child: BeeMascot(
               state: MascotState.seniorHelper,
               size: 100,
-              language: controller.language,
+              language: lang,
               message: hasOvercharge
-                  ? (isRu
-                      ? 'Не переживайте! Я проверил ваш баланс и нашёл, как отключить платные рассылки одной кнопкой.'
-                      : 'Кабатыр болбоңуз! Балансыңызды текшердим, ашыкча төлөмдөрдү бир баскыч менен өчүрөбүз.')
-                  : (isRu
-                      ? 'Всё в порядке! Я проверил все списания — лишних подписок и скрытых платежей нет.'
-                      : 'Баары жайында! Бардык списаниелер таза, жашыруун жазылуулар жок.'),
+                  ? tr(
+                      lang,
+                      ru: 'Не переживайте! Я проверил ваш баланс и нашёл, как отключить платные рассылки одной кнопкой.',
+                      ky: 'Кабатыр болбоңуз! Балансыңызды текшердим, ашыкча төлөмдөрдү бир баскыч менен өчүрөбүз.',
+                      en: 'Don\'t worry! I checked your balance and found how to cancel paid subscriptions with one tap.',
+                    )
+                  : tr(
+                      lang,
+                      ru: 'Всё в порядке! Я проверил все списания — лишних подписок и скрытых платежей нет.',
+                      ky: 'Баары жайында! Бардык списаниелер таза, жашыруун жазылуулар жок.',
+                      en: 'Everything looks great! I checked all charges — no hidden subscriptions or extra fees.',
+                    ),
             ),
           ),
         ),
         const SizedBox(height: 16),
         Card(
-          color: hasOvercharge
-              ? AppTheme.coralRed.withValues(alpha: 0.14)
-              : AppTheme.electricGreen.withValues(alpha: 0.14),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -78,9 +84,12 @@ class SeniorDashboardView extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        isRu
-                            ? 'Проверка номера ($memberName)'
-                            : 'Номерди текшерүү ($memberName)',
+                        tr(
+                          lang,
+                          ru: 'Проверка номера ($memberName)',
+                          ky: 'Номерди текшерүү ($memberName)',
+                          en: 'Number check ($memberName)',
+                        ),
                         style: theme.textTheme.headlineSmall,
                       ),
                     ),
@@ -88,20 +97,29 @@ class SeniorDashboardView extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isRu
-                      ? 'Потрачено всего: ${formatSom(result.report.totalSpendSom)} сом'
-                      : 'Жалпы сарпталды: ${formatSom(result.report.totalSpendSom)} сом',
+                  tr(
+                    lang,
+                    ru: 'Потрачено всего: ${formatSom(result.report.totalSpendSom)} сом',
+                    ky: 'Жалпы сарпталды: ${formatSom(result.report.totalSpendSom)} сом',
+                    en: 'Total spent: ${formatSom(result.report.totalSpendSom)} $cur',
+                  ),
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   hasOvercharge
-                      ? (isRu
-                          ? 'Лишние списания: ${formatSom(overcharge)} сом! Найдено проблем: ${result.anomalies.length}.'
-                          : 'Ашыкча алынган акча: ${formatSom(overcharge)} сом! Көйгөйлөр: ${result.anomalies.length}.')
-                      : (isRu
-                          ? 'Всё спокойно: лишних подписок и списаний нет.'
-                          : 'Баары жайында: ашыкча жазылуулар жок.'),
+                      ? tr(
+                          lang,
+                          ru: 'Лишние списания: ${formatSom(overcharge)} сом! Найдено проблем: ${result.anomalies.length}.',
+                          ky: 'Ашыкча алынган акча: ${formatSom(overcharge)} сом! Көйгөйлөр: ${result.anomalies.length}.',
+                          en: 'Extra charges: ${formatSom(overcharge)} $cur! Issues found: ${result.anomalies.length}.',
+                        )
+                      : tr(
+                          lang,
+                          ru: 'Всё спокойно: лишних подписок и списаний нет.',
+                          ky: 'Баары жайында: ашыкча жазылуулар жок.',
+                          en: 'All clear: no unwanted subscriptions or extra charges.',
+                        ),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: hasOvercharge
@@ -118,14 +136,40 @@ class SeniorDashboardView extends StatelessWidget {
                       onPressed: () => controller.setTabIndex(4),
                       icon: const Icon(Icons.description_rounded),
                       label: Text(
-                        isRu ? 'Сделать заявление на возврат' : 'Кайтаруу арызын жасоо',
+                        tr(
+                          lang,
+                          ru: 'Сделать заявление на возврат',
+                          ky: 'Кайтаруу арызын жасоо',
+                          en: 'Create refund claim',
+                        ),
                       ),
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.loadCustomCsvForActiveMember,
                       icon: const Icon(Icons.upload_file_rounded),
                       label: Text(
-                        isRu ? 'Загрузить другой файл' : 'Башка файл жүктөө',
+                        tr(
+                          lang,
+                          ru: 'Загрузить другой файл',
+                          ky: 'Башка файл жүктөө',
+                          en: 'Load another file',
+                        ),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => showGuideStories(
+                        context,
+                        language: lang,
+                        onEnableSeniorMode: () => controller.toggleSeniorMode(true),
+                      ),
+                      icon: const Icon(Icons.play_circle_outline_rounded),
+                      label: Text(
+                        tr(
+                          lang,
+                          ru: 'Как пользоваться (обучалка)',
+                          ky: 'Кантип колдонуу керек',
+                          en: 'How it works (guide)',
+                        ),
                       ),
                     ),
                   ],
@@ -136,7 +180,12 @@ class SeniorDashboardView extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          isRu ? 'Что нужно отключить или проверить:' : 'Эмнени өчүрүү же текшерүү керек:',
+          tr(
+            lang,
+            ru: 'Что нужно отключить или проверить:',
+            ky: 'Эмнени өчүрүү же текшерүү керек:',
+            en: 'What to cancel or review:',
+          ),
           style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: 12),
@@ -145,9 +194,12 @@ class SeniorDashboardView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                isRu
-                    ? 'Подозрительных операций не обнаружено.'
-                    : 'Шектүү операциялар табылган жок.',
+                tr(
+                  lang,
+                  ru: 'Подозрительных операций не обнаружено.',
+                  ky: 'Шектүү операциялар табылган жок.',
+                  en: 'No suspicious transactions found.',
+                ),
                 style: theme.textTheme.bodyLarge,
               ),
             ),
@@ -163,12 +215,12 @@ class SeniorDashboardView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${AppStrings.anomalyTitle(anomaly.type, controller.language)} — ${formatSom(anomaly.costSom)} сом',
+                        '${AppStrings.anomalyTitle(anomaly.type, lang)} — ${formatSom(anomaly.costSom)} $cur',
                         style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        isRu ? anomaly.explanationRu : anomaly.explanationKy,
+                        anomaly.explanation(lang),
                         style: theme.textTheme.bodyLarge,
                       ),
                       if (anomaly.ussdHint != null) ...[
@@ -184,9 +236,12 @@ class SeniorDashboardView extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    isRu
-                                        ? 'Скопировано: $copyText'
-                                        : 'Көчүрүлдү: $copyText',
+                                    tr(
+                                      lang,
+                                      ru: 'Скопировано: $copyText',
+                                      ky: 'Көчүрүлдү: $copyText',
+                                      en: 'Copied: $copyText',
+                                    ),
                                   ),
                                 ),
                               );

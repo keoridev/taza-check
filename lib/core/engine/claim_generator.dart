@@ -55,6 +55,14 @@ class ClaimGenerator {
         dateStr: formattedDate,
       );
     }
+    if (language == AppLanguage.en) {
+      return _buildEnglishClaim(
+        subscriber: subscriber,
+        anomalies: selectedAnomalies,
+        refundStr: refundStr,
+        dateStr: formattedDate,
+      );
+    }
     return _buildRussianClaim(
       subscriber: subscriber,
       anomalies: selectedAnomalies,
@@ -158,6 +166,55 @@ $itemsBuffer
 
 Дата: $dateStr
 Колу: _____________________ / ${subscriber.fullName} /
+''';
+  }
+
+  String _buildEnglishClaim({
+    required SubscriberInfo subscriber,
+    required List<Anomaly> anomalies,
+    required String refundStr,
+    required String dateStr,
+  }) {
+    final itemsBuffer = StringBuffer();
+    if (anomalies.isEmpty) {
+      itemsBuffer.writeln('  (No disputed charges selected)');
+    } else {
+      for (var i = 0; i < anomalies.length; i++) {
+        final a = anomalies[i];
+        itemsBuffer.writeln(
+          '  ${i + 1}. [${a.datetime}] ${AppStrings.anomalyTitle(a.type, AppLanguage.en)} '
+          '| Number: ${a.number ?? "-"} | Billed: ${formatSom(a.costSom)} KGS '
+          '| Refund: ${formatSom(a.overchargeSom)} KGS\n'
+          '     Details: ${a.explanation(AppLanguage.en)}',
+        );
+      }
+    }
+
+    return '''
+To Customer Support / Claims Department
+Telecom Operator: ${subscriber.operatorName}
+Subscriber: ${subscriber.fullName}
+Phone Number: ${subscriber.phone}
+City: ${subscriber.city}
+
+PRE-TRIAL DISPUTE CLAIM
+for refund of unauthorized charges and cancellation of unsolicited services
+
+Pursuant to the Law of the Kyrgyz Republic "On Consumer Rights Protection" (Articles 15, 27, 31) and the Mobile Telecommunications Rules of the Kyrgyz Republic, I hereby request a billing recalculation for my account (${subscriber.phone}) and a refund of erroneous / unauthorized charges.
+
+An itemized billing audit revealed the following disputed transactions:
+$itemsBuffer
+Total refundable amount (without double counting): $refundStr KGS.
+
+In accordance with Articles 15 and 31 of the Law of the Kyrgyz Republic "On Consumer Rights Protection", within 10 (ten) calendar days of receiving this claim I demand:
+1. A refund of $refundStr KGS to the balance of phone number ${subscriber.phone}.
+2. Full cancellation of all paid content and third-party subscriptions activated without my explicit written or USSD confirmation.
+3. An official written response detailing the resolution of this claim.
+
+If this claim is refused or ignored within the statutory timeframe, I reserve the right to file a complaint with the Antimonopoly Regulation Service of the Kyrgyz Republic and seek judicial relief.
+
+Date: $dateStr
+Signature: _____________________ / ${subscriber.fullName} /
 ''';
   }
 }

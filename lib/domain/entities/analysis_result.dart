@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import '../../core/constants/app_strings.dart';
 import 'anomaly.dart';
 import 'billing_record.dart';
 import 'dropped_row.dart';
@@ -17,6 +18,7 @@ class AnalysisResult {
     required this.annualLeakSom,
     required this.summaryRu,
     required this.summaryKy,
+    this.summaryEn = '',
   });
 
   final String sourceName;
@@ -28,4 +30,11 @@ class AnalysisResult {
   final Decimal annualLeakSom;
   final String summaryRu;
   final String summaryKy;
+  final String summaryEn;
+
+  String summary(AppLanguage language) => switch (language) {
+        AppLanguage.ru => summaryRu,
+        AppLanguage.ky => summaryKy,
+        AppLanguage.en => summaryEn.isNotEmpty ? summaryEn : summaryRu,
+      };
 }

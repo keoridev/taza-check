@@ -66,12 +66,21 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
     _syncFromControllerIfNeeded();
     final controller = widget.controller;
     final result = controller.activeResult;
-    final isRu = controller.language == AppLanguage.ru;
+    final lang = controller.language;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(lang);
     final theme = Theme.of(context);
 
     if (result == null) {
       return Center(
-        child: Text(isRu ? 'Нет данных для заявления' : 'Маалымат жок'),
+        child: Text(
+          tr(
+            lang,
+            ru: 'Нет данных для заявления',
+            ky: 'Маалымат жок',
+            en: 'No billing data for a claim',
+          ),
+        ),
       );
     }
 
@@ -97,8 +106,13 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   children: [
                     AnimatedSomText(
                       amount: controller.selectedClaimRefundTotal,
-                      prefix: isRu ? 'Сумма к возврату: ' : 'Кайтаруу суммасы: ',
-                      suffix: ' сом',
+                      prefix: tr(
+                        lang,
+                        ru: 'Сумма к возврату: ',
+                        ky: 'Кайтаруу суммасы: ',
+                        en: 'Refund total: ',
+                      ),
+                      suffix: ' $cur',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppTheme.electricGreen,
@@ -125,9 +139,13 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                       segments: const [
                         ButtonSegment(value: AppLanguage.ru, label: Text('RU')),
                         ButtonSegment(value: AppLanguage.ky, label: Text('KY')),
+                        ButtonSegment(value: AppLanguage.en, label: Text('EN')),
                       ],
-                      selected: <AppLanguage>{controller.language},
-                      onSelectionChanged: (s) => controller.setLanguage(s.first),
+                      selected: <AppLanguage>{lang},
+                      onSelectionChanged: (s) {
+                        HapticFeedback.selectionClick();
+                        controller.setLanguage(s.first);
+                      },
                     ),
                   ],
                 ),
@@ -138,7 +156,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                     final nameField = TextField(
                       controller: _nameCtrl,
                       decoration: InputDecoration(
-                        labelText: isRu ? 'ФИО абонента' : 'Абоненттин аты-жөнү',
+                        labelText: tr(
+                          lang,
+                          ru: 'ФИО абонента',
+                          ky: 'Абоненттин аты-жөнү',
+                          en: 'Full name',
+                        ),
                       ),
                       onChanged: (v) =>
                           controller.updateSubscriberInfo(fullName: v),
@@ -146,7 +169,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                     final phoneField = TextField(
                       controller: _phoneCtrl,
                       decoration: InputDecoration(
-                        labelText: isRu ? 'Номер телефона' : 'Телефон номери',
+                        labelText: tr(
+                          lang,
+                          ru: 'Номер телефона',
+                          ky: 'Телефон номери',
+                          en: 'Phone number',
+                        ),
                       ),
                       onChanged: (v) =>
                           controller.updateSubscriberInfo(phone: v),
@@ -154,7 +182,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                     final operatorField = TextField(
                       controller: _operatorCtrl,
                       decoration: InputDecoration(
-                        labelText: isRu ? 'Оператор' : 'Оператор',
+                        labelText: tr(
+                          lang,
+                          ru: 'Оператор',
+                          ky: 'Оператор',
+                          en: 'Operator',
+                        ),
                       ),
                       onChanged: (v) =>
                           controller.updateSubscriberInfo(operatorName: v),
@@ -162,7 +195,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                     final cityField = TextField(
                       controller: _cityCtrl,
                       decoration: InputDecoration(
-                        labelText: isRu ? 'Город' : 'Шаар',
+                        labelText: tr(
+                          lang,
+                          ru: 'Город',
+                          ky: 'Шаар',
+                          en: 'City',
+                        ),
                       ),
                       onChanged: (v) =>
                           controller.updateSubscriberInfo(city: v),
@@ -217,9 +255,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      isRu
-                          ? 'Оспариваемые списания (${controller.selectedClaimAnomalies.length}/${claimable.length})'
-                          : 'Талаштуу төлөмдөр (${controller.selectedClaimAnomalies.length}/${claimable.length})',
+                      tr(
+                        lang,
+                        ru: 'Оспариваемые списания (${controller.selectedClaimAnomalies.length}/${claimable.length})',
+                        ky: 'Талаштуу төлөмдөр (${controller.selectedClaimAnomalies.length}/${claimable.length})',
+                        en: 'Disputed charges (${controller.selectedClaimAnomalies.length}/${claimable.length})',
+                      ),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -229,12 +270,16 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                       children: [
                         TextButton(
                           onPressed: () => controller.selectAllClaimAnomalies(true),
-                          child: Text(isRu ? 'Выбрать все' : 'Баарын тандоо'),
+                          child: Text(
+                            tr(lang, ru: 'Выбрать все', ky: 'Баарын тандоо', en: 'Select all'),
+                          ),
                         ),
                         TextButton(
                           onPressed: () =>
                               controller.selectAllClaimAnomalies(false),
-                          child: Text(isRu ? 'Снять все' : 'Тазалоо'),
+                          child: Text(
+                            tr(lang, ru: 'Снять все', ky: 'Тазалоо', en: 'Clear'),
+                          ),
                         ),
                       ],
                     ),
@@ -244,9 +289,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
-                      isRu
-                          ? 'Нет списаний для возврата.'
-                          : 'Кайтарууга төлөмдөр жок.',
+                      tr(
+                        lang,
+                        ru: 'Нет списаний для возврата.',
+                        ky: 'Кайтарууга төлөмдөр жок.',
+                        en: 'No refundable charges found.',
+                      ),
                     ),
                   )
                 else
@@ -258,7 +306,7 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                       contentPadding: EdgeInsets.zero,
                       onChanged: (_) => controller.toggleClaimAnomaly(a.id),
                       title: Text(
-                        '${AppStrings.anomalyTitle(a.type, controller.language)} · ${formatSom(a.overchargeSom)} сом',
+                        '${AppStrings.anomalyTitle(a.type, lang)} · ${formatSom(a.overchargeSom)} $cur',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text('${a.datetime} · ${a.number ?? "-"}'),
@@ -282,9 +330,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      isRu
-                          ? 'Предпросмотр заявления (claim.txt)'
-                          : 'Арызды алдын ала көрүү (claim.txt)',
+                      tr(
+                        lang,
+                        ru: 'Предпросмотр заявления (claim.txt)',
+                        ky: 'Арызды алдын ала көрүү (claim.txt)',
+                        en: 'Claim preview (claim.txt)',
+                      ),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -302,16 +353,21 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    isRu
-                                        ? 'Текст заявления скопирован'
-                                        : 'Арыздын тексти көчүрүлдү',
+                                    tr(
+                                      lang,
+                                      ru: 'Текст заявления скопирован',
+                                      ky: 'Арыздын тексти көчүрүлдү',
+                                      en: 'Claim text copied',
+                                    ),
                                   ),
                                 ),
                               );
                             }
                           },
                           icon: const Icon(Icons.copy_rounded, size: 18),
-                          label: Text(isRu ? 'Копировать' : 'Көчүрүү'),
+                          label: Text(
+                            tr(lang, ru: 'Копировать', ky: 'Көчүрүү', en: 'Copy'),
+                          ),
                         ),
                         OutlinedButton.icon(
                           onPressed: () =>
@@ -338,7 +394,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                           label: const Text('dropped_rows.csv'),
                         ),
                         IconButton(
-                          tooltip: isRu ? 'Поделиться' : 'Бөлүшүү',
+                          tooltip: tr(
+                            lang,
+                            ru: 'Поделиться',
+                            ky: 'Бөлүшүү',
+                            en: 'Share',
+                          ),
                           onPressed: () => _handleExport(
                             context,
                             'claim.txt',
@@ -382,7 +443,7 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
     String fileName,
     Future<String?> Function() action,
   ) async {
-    final isRu = widget.controller.language == AppLanguage.ru;
+    final lang = widget.controller.language;
     try {
       final path = await action();
       if (!context.mounted) return;
@@ -390,7 +451,12 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isRu ? 'Экспортировано: $fileName' : 'Экспорттолду: $fileName',
+              AppStrings.tr(
+                lang,
+                ru: 'Экспортировано: $fileName',
+                ky: 'Экспорттолду: $fileName',
+                en: 'Exported: $fileName',
+              ),
             ),
           ),
         );

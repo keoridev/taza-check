@@ -131,6 +131,23 @@ void main() {
           await tester.tap(find.byIcon(Icons.close_rounded));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 250));
+
+          // Scroll horizontal Stories strip to the 5th Guide Story card and step through all 5 tutorial slides
+          await tester.drag(find.byType(ListView).first, const Offset(-300, 0));
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text('Обучалка\nдля семьи'), findsOneWidget);
+          await tester.tap(find.text('Обучалка\nдля семьи'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 250));
+          expect(find.text('Привет! Я Пчёлка-помощник'), findsOneWidget);
+          for (var step = 0; step < 4; step++) {
+            await tester.tap(find.text('Дальше →'));
+            await tester.pump(const Duration(milliseconds: 200));
+          }
+          expect(find.text('Крупный шрифт и спокойствие'), findsOneWidget);
+          await tester.tap(find.text('Понятно, поехали!'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 250));
         }
 
         await tester.ensureVisible(find.text('Категории'));
@@ -190,7 +207,7 @@ void main() {
         await tester.drag(find.byType(ListView).first, const Offset(0, -400));
         await tester.pump(const Duration(milliseconds: 200));
 
-        // Toggle Light Theme, Kyrgyz Language ('ky') via settings menu, & Senior Mode
+        // Toggle Light Theme, Kyrgyz Language ('ky'), English Language ('en'), & Senior Mode
         await tester.tap(find.text('Обзор').last);
         await tester.pump(const Duration(milliseconds: 250));
         await tester.tap(find.byIcon(Icons.tune_rounded));
@@ -201,11 +218,39 @@ void main() {
         await tester.pump(const Duration(milliseconds: 250));
         expect(find.text('Менин акчам кайда?'), findsOneWidget);
         expect(find.text('Прогноз утечки'), findsNothing);
+
+        await tester.tap(find.byIcon(Icons.tune_rounded));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.tap(find.text('ENG (English)'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.text('Where is my money?'), findsOneWidget);
+        expect(find.text('Leak forecast'), findsOneWidget);
+        expect(find.text('Load CSV'), findsOneWidget);
+
+        // Verify English across tabs
+        await tester.tap(find.text('Alerts').last);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.textContaining('Filter by type'), findsOneWidget);
+        await tester.tap(find.text('Family').last);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.text('Cross-account threats'), findsOneWidget);
+        await tester.tap(find.text('Plans').last);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.textContaining('Recommended · Best plan'), findsOneWidget);
+        await tester.tap(find.text('Claim').last);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.textContaining('Refund total:'), findsOneWidget);
+        await tester.tap(find.text('Home').last);
+        await tester.pump(const Duration(milliseconds: 250));
+
         controller.toggleThemeMode();
         await tester.pump(const Duration(milliseconds: 250));
         controller.toggleSeniorMode(true);
         await tester.pump(const Duration(milliseconds: 250));
         expect(find.byType(SeniorDashboardView), findsOneWidget);
+        expect(find.text('How it works (guide)'), findsOneWidget);
       },
     );
   }

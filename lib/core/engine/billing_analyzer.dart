@@ -79,6 +79,7 @@ class BillingAnalyzer {
       annualLeakSom: annualLeak,
       summaryRu: summaries.ru,
       summaryKy: summaries.ky,
+      summaryEn: summaries.en,
     );
   }
 
@@ -102,46 +103,68 @@ class BillingAnalyzer {
     AnalysisResult result, {
     AppLanguage language = AppLanguage.ru,
   }) {
-    final isRu = language == AppLanguage.ru;
+    final tr = AppStrings.tr;
+    final cur = AppStrings.currency(language);
     final buffer = StringBuffer()
       ..writeln('# ${AppStrings.appTitle(language)} — ${result.sourceName}')
       ..writeln()
+      ..writeln(result.summary(language))
+      ..writeln()
       ..writeln(
-        isRu ? result.summaryRu : result.summaryKy,
+        tr(
+          language,
+          ru: '## Ключевые показатели',
+          ky: '## Негизги көрсөткүчтөр',
+          en: '## Key metrics',
+        ),
+      )
+      ..writeln(
+        '- ${tr(language, ru: "Всего потрачено", ky: "Жалпы чыгым", en: "Total spent")}: **${formatSom(result.report.totalSpendSom)} $cur**',
+      )
+      ..writeln(
+        '- ${tr(language, ru: "Возможная переплата", ky: "Мүмкүн болгон ашыкча төлөм", en: "Estimated overcharge")}: **${formatSom(result.totalOverchargeSom)} $cur**',
+      )
+      ..writeln(
+        '- ${tr(language, ru: "Прогноз утечки за год (подписки × 12)", ky: "Жылдык жоготуу божомолу", en: "Annual leak forecast (subscriptions × 12)")}: **${formatSom(result.annualLeakSom)} $cur**',
+      )
+      ..writeln(
+        '- ${tr(language, ru: "Принято строк / Отброшено битых", ky: "Кабыл алынган / Бузулган саптар", en: "Accepted rows / Dropped malformed rows")}: **${result.records.length} / ${result.droppedRows.length}**',
       )
       ..writeln()
-      ..writeln(isRu ? '## Ключевые показатели' : '## Негизги көрсөткүчтөр')
       ..writeln(
-        '- ${isRu ? "Всего потрачено" : "Жалпы чыгым"}: **${formatSom(result.report.totalSpendSom)} сом**',
-      )
-      ..writeln(
-        '- ${isRu ? "Возможная переплата" : "Мүмкүн болгон ашыкча төлөм"}: **${formatSom(result.totalOverchargeSom)} сом**',
-      )
-      ..writeln(
-        '- ${isRu ? "Прогноз утечки за год (подписки × 12)" : "Жылдык жоготуу божомолу"}: **${formatSom(result.annualLeakSom)} сом**',
-      )
-      ..writeln(
-        '- ${isRu ? "Принято строк / Отброшено битых" : "Кабыл алынган / Бузулган саптар"}: **${result.records.length} / ${result.droppedRows.length}**',
-      )
-      ..writeln()
-      ..writeln(isRu ? '## Расходы по категориям' : '## Категориялар боюнча чыгымдар');
+        tr(
+          language,
+          ru: '## Расходы по категориям',
+          ky: '## Категориялар боюнча чыгымдар',
+          en: '## Spend by category',
+        ),
+      );
 
     for (final type in BillingType.values) {
       final sum = result.report.byCategory[type] ?? Decimal.zero;
       buffer.writeln(
-        '- ${AppStrings.categoryLabel(type, language)} (`${type.wireName}`): ${formatSom(sum)} сом',
+        '- ${AppStrings.categoryLabel(type, language)} (`${type.wireName}`): ${formatSom(sum)} $cur',
       );
     }
 
     buffer
       ..writeln()
-      ..writeln(isRu ? '## Топ-5 дорогих номеров' : '## Эң кымбат 5 номер');
+      ..writeln(
+        tr(
+          language,
+          ru: '## Топ-5 дорогих номеров',
+          ky: '## Эң кымбат 5 номер',
+          en: '## Top-5 numbers by spend',
+        ),
+      );
     if (result.report.topNumbers.isEmpty) {
-      buffer.writeln(isRu ? '- Нет данных' : '- Маалымат жок');
+      buffer.writeln(
+        tr(language, ru: '- Нет данных', ky: '- Маалымат жок', en: '- No data'),
+      );
     } else {
       for (final item in result.report.topNumbers) {
         buffer.writeln(
-          '- `${item.normalizedNumber}`: ${formatSom(item.totalSom)} сом (${item.count})',
+          '- `${item.normalizedNumber}`: ${formatSom(item.totalSom)} $cur (${item.count})',
         );
       }
     }
@@ -149,12 +172,22 @@ class BillingAnalyzer {
     buffer
       ..writeln()
       ..writeln(
-        isRu
-            ? '## Выявленные аномалии (${result.anomalies.length})'
-            : '## Аныкталган аномалиялар (${result.anomalies.length})',
+        tr(
+          language,
+          ru: '## Выявленные аномалии (${result.anomalies.length})',
+          ky: '## Аныкталган аномалиялар (${result.anomalies.length})',
+          en: '## Detected anomalies (${result.anomalies.length})',
+        ),
       );
     if (result.anomalies.isEmpty) {
-      buffer.writeln(isRu ? '- Аномалий не обнаружено.' : '- Аномалия табылган жок.');
+      buffer.writeln(
+        tr(
+          language,
+          ru: '- Аномалий не обнаружено.',
+          ky: '- Аномалия табылган жок.',
+          en: '- No anomalies detected.',
+        ),
+      );
     } else {
       for (final a in result.anomalies) {
         buffer.writeln(

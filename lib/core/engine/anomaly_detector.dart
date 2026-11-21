@@ -67,6 +67,7 @@ class AnomalyDetector {
             overchargeSom: Decimal.zero,
             explanationRu: text.ru,
             explanationKy: text.ky,
+            explanationEn: text.en,
             zScore: zScore,
             baselineMeanSom: meanSom,
           ),
@@ -102,6 +103,7 @@ class AnomalyDetector {
             ussdHint: ussdHint,
             explanationRu: text.ru,
             explanationKy: text.ky,
+            explanationEn: text.en,
           ),
         );
       }
@@ -126,6 +128,7 @@ class AnomalyDetector {
               ussdHint: ussdHint,
               explanationRu: text.ru,
               explanationKy: text.ky,
+              explanationEn: text.en,
             ),
           );
         }
@@ -155,6 +158,7 @@ class AnomalyDetector {
                 ussdHint: ussdHint,
                 explanationRu: text.ru,
                 explanationKy: text.ky,
+                explanationEn: text.en,
               ),
             );
           }
@@ -189,6 +193,7 @@ class AnomalyDetector {
               ussdHint: 'Проверьте роуминг/международные пакеты у оператора',
               explanationRu: text.ru,
               explanationKy: text.ky,
+              explanationEn: text.en,
             ),
           );
         }
@@ -250,6 +255,8 @@ class AnomalyDetector {
               'Короткий номер $code списал $lossStr сом ($count списаний) сразу у нескольких членов семьи: $membersJoined.',
           explanationKy:
               '$code кыска номери үй-бүлөнүн бир нече мүчөсүнөн ($membersJoined) жалпы $lossStr сом ($count жолу) алып салды.',
+          explanationEn:
+              'Short code $code charged $lossStr KGS ($count charges) across multiple family members: $membersJoined.',
         ),
       );
     }

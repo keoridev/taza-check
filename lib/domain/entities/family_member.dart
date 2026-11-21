@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import '../../core/constants/app_strings.dart';
 import 'analysis_result.dart';
 
 /// Profile of a family member protected under Family Shield.
@@ -49,6 +50,7 @@ class FamilyReputationFlag {
     required this.ussdHint,
     required this.explanationRu,
     required this.explanationKy,
+    this.explanationEn = '',
   });
 
   final String shortCode;
@@ -58,4 +60,12 @@ class FamilyReputationFlag {
   final String ussdHint;
   final String explanationRu;
   final String explanationKy;
+  final String explanationEn;
+
+  String explanation(AppLanguage language) => switch (language) {
+        AppLanguage.ru => explanationRu,
+        AppLanguage.ky => explanationKy,
+        AppLanguage.en =>
+          explanationEn.isNotEmpty ? explanationEn : explanationRu,
+      };
 }
