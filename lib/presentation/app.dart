@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/app_strings.dart';
 import 'screens/anomalies_screen.dart';
@@ -136,7 +137,10 @@ class _MainShell extends StatelessWidget {
                     child: NavigationRail(
                       backgroundColor: Colors.transparent,
                       selectedIndex: controller.selectedTabIndex,
-                      onDestinationSelected: controller.setTabIndex,
+                      onDestinationSelected: (i) {
+                        HapticFeedback.selectionClick();
+                        controller.setTabIndex(i);
+                      },
                       extended: width >= 1120,
                       labelType: width >= 1120
                           ? NavigationRailLabelType.none
@@ -215,7 +219,10 @@ class _MainShell extends StatelessWidget {
           if (members.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: isRu ? 'Выбрать абонента' : 'Абонентти тандоо',
-              onSelected: controller.selectMember,
+              onSelected: (id) {
+                HapticFeedback.selectionClick();
+                controller.selectMember(id);
+              },
               itemBuilder: (_) => members
                   .map(
                     (m) => PopupMenuItem<String>(
@@ -289,6 +296,7 @@ class _MainShell extends StatelessWidget {
                 case 'theme':
                   controller.toggleThemeMode();
                 case 'senior':
+                  HapticFeedback.mediumImpact();
                   controller.toggleSeniorMode();
                 case 'demo':
                   controller.loadDemoFamily();
@@ -466,7 +474,10 @@ class _SleekBottomBar extends StatelessWidget {
                   : AppTheme.obsidianBlack;
               return Expanded(
                 child: InkWell(
-                  onTap: () => onDestinationSelected(i),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onDestinationSelected(i);
+                  },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

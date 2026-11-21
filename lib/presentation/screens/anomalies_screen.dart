@@ -19,6 +19,13 @@ class AnomaliesScreen extends StatefulWidget {
 
   final AppController controller;
 
+  /// Opens the live Beeline Guard SMS Intercept demo modal from any screen.
+  static Future<void> showSmsInterceptSheet(
+    BuildContext context, {
+    required AppLanguage language,
+  }) =>
+      _showSmsInterceptSheetImpl(context, language == AppLanguage.ru);
+
   @override
   State<AnomaliesScreen> createState() => _AnomaliesScreenState();
 }
@@ -60,7 +67,10 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        onSelected: (_) => setState(() => _selectedFilter = null),
+        onSelected: (_) {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedFilter = null);
+        },
       ),
       ...AnomalyType.values.map((type) {
         final count = result.anomalies.where((a) => a.type == type).length;
@@ -80,9 +90,12 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          onSelected: (_) => setState(() {
-            _selectedFilter = _selectedFilter == type ? null : type;
-          }),
+          onSelected: (_) {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _selectedFilter = _selectedFilter == type ? null : type;
+            });
+          },
         );
       }),
     ];
@@ -123,7 +136,10 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: () => _showSmsInterceptSheet(context, isRu),
+                      onPressed: () => AnomaliesScreen.showSmsInterceptSheet(
+                        context,
+                        language: controller.language,
+                      ),
                       icon: const Icon(
                         Icons.sms_failed_rounded,
                         size: 15,
@@ -240,7 +256,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   Text(
                     isSpike
                         ? '-${formatSom(anomaly.costSom)} сом'
-                        : '+${formatSom(anomaly.overchargeSom)} сом',
+                        : '${isRu ? "К возврату" : "Кайтаруу"}: ${formatSom(anomaly.overchargeSom)} сом',
                     style: TextStyle(
                       color: isSpike ? AppTheme.coralRed : AppTheme.electricGreen,
                       fontWeight: FontWeight.w800,
@@ -349,8 +365,10 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onSelected: (_) =>
-                          controller.toggleClaimAnomaly(anomaly.id),
+                      onSelected: (_) {
+                        HapticFeedback.selectionClick();
+                        controller.toggleClaimAnomaly(anomaly.id);
+                      },
                     ),
                 ],
               ),
@@ -360,10 +378,13 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
       ),
     );
   }
+}
 
-  Future<void> _showSmsInterceptSheet(BuildContext context, bool isRu) async {
-    var neutralized = false;
-    await showModalBottomSheet<void>(
+Future<void> _showSmsInterceptSheetImpl(BuildContext context, bool isRu) async {
+  HapticFeedback.mediumImpact();
+  var neutralized = false;
+  final language = isRu ? AppLanguage.ru : AppLanguage.ky;
+  await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppTheme.carbonSurface,
@@ -429,7 +450,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   BeeMascot(
                     state: neutralized ? MascotState.happy : MascotState.alert,
                     size: 72,
-                    language: widget.controller.language,
+                    language: language,
                     message: neutralized
                         ? (isRu
                             ? 'Отлично! Команда СТОП отправлена на 7575, вы сэкономили 5 475 сом/год.'
@@ -482,6 +503,7 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
                   if (!neutralized)
                     FilledButton.icon(
                       onPressed: () async {
+                        HapticFeedback.mediumImpact();
                         setSheetState(() => neutralized = true);
                         await Clipboard.setData(const ClipboardData(text: 'СТОП'));
                       },
@@ -510,5 +532,4 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> {
         );
       },
     );
-  }
 }

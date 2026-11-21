@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/engine/llm_service.dart';
@@ -7,11 +8,14 @@ import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/analysis_result.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animated_som_text.dart';
 import '../widgets/bee_mascot.dart';
 import '../widgets/category_breakdown_chart.dart';
 import '../widgets/daily_spend_chart.dart';
+import '../widgets/operator_logo.dart';
 import '../widgets/senior_dashboard_view.dart';
 import '../widgets/stories_recap_modal.dart';
+import 'anomalies_screen.dart';
 
 /// Main overview screen (`Обзор`): Compact Telecom Balance hero card with BeeMascot,
 /// tight 2×2 KPI grid, unified analytics card (`По дням` / `Категории` / `Топ-5`),
@@ -135,6 +139,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  String _formatCompactSom(Decimal value) {
+    final rounded = value.round(scale: 0).toBigInt().toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < rounded.length; i++) {
+      if (i > 0 && (rounded.length - i) % 3 == 0) {
+        buf.write(' ');
+      }
+      buf.write(rounded[i]);
+    }
+    return buf.toString();
+  }
+
   Widget _buildStoriesStrip(
     BuildContext context,
     AnalysisResult result,
@@ -144,61 +160,232 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? controller.tariffRecommendations.first
         : null;
     final yearlySavings = bestTariff?.yearlySavingsSom ?? Decimal.zero;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cur = result.report.totalSpendSom.toDouble();
+    final opt = bestTariff?.estimatedMonthlyCostSom.toDouble() ?? cur;
+    final discountPct = cur > opt && cur > 0
+        ? (((cur - opt) / cur) * 100).round()
+        : 80;
 
-    final items = <({IconData icon, String title, Color accent, int slide})>[
+    final overchargeCompact = _formatCompactSom(result.totalOverchargeSom);
+    final savingsCompact = _formatCompactSom(yearlySavings);
+
+    final cards = <({
+      int slide,
+      String title,
+      Color ringAccent,
+      List<Color> gradientColors,
+      Widget artwork,
+    })>[
       (
-        icon: Icons.bar_chart_rounded,
-        title: isRu ? 'Итоги\nмесяца' : 'Айлык\nжыйынтык',
-        accent: AppTheme.beelineYellow,
         slide: 0,
+        title: isRu ? 'Итоги\nмесяца' : 'Айлык\nжыйынтык',
+        ringAccent: AppTheme.beelineYellow,
+        gradientColors: const [Color(0xFF4A3800), Color(0xFF14120A)],
+        artwork: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 8,
+              top: 12,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final h in const [10.0, 18.0, 14.0, 26.0])
+                    Container(
+                      width: 5,
+                      height: h,
+                      margin: const EdgeInsets.only(right: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Positioned(
+              right: -6,
+              top: 4,
+              child: Transform.rotate(
+                angle: -0.08,
+                child: Image.asset(
+                  'assets/mascot/bee_detective.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       (
-        icon: Icons.bolt_rounded,
-        title: isRu
-            ? '${result.anomalies.length} утечек\n${formatSom(result.totalOverchargeSom)} с'
-            : '${result.anomalies.length} жоготуу\n${formatSom(result.totalOverchargeSom)} с',
-        accent: AppTheme.coralRed,
         slide: 1,
-      ),
-      (
-        icon: Icons.savings_rounded,
         title: isRu
-            ? 'Экономия\n${formatSom(yearlySavings)} с'
-            : 'Үнөм\n${formatSom(yearlySavings)} с',
-        accent: AppTheme.electricGreen,
-        slide: 2,
+            ? '${result.anomalies.length} утечек\n$overchargeCompact с'
+            : '${result.anomalies.length} жоготуу\n$overchargeCompact с',
+        ringAccent: AppTheme.coralRed,
+        gradientColors: const [Color(0xFF4E1116), Color(0xFF160B0C)],
+        artwork: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              right: -12,
+              top: -8,
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.coralRed.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -2,
+              top: 2,
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.coralRed.withValues(alpha: 0.35),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -4,
+              top: 4,
+              child: Image.asset(
+                'assets/mascot/bee_alert.png',
+                width: 64,
+                height: 64,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ),
       (
-        icon: Icons.people_alt_rounded,
+        slide: 2,
+        title: isRu
+            ? 'Экономия\n$savingsCompact с'
+            : 'Үнөм\n$savingsCompact с',
+        ringAccent: AppTheme.electricGreen,
+        gradientColors: const [Color(0xFF0C3D24), Color(0xFF0A140F)],
+        artwork: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '−$discountPct%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -4,
+              top: 6,
+              child: Image.asset(
+                'assets/mascot/bee_happy.png',
+                width: 64,
+                height: 64,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
+      ),
+      (
+        slide: 3,
         title: isRu
             ? 'Семья:\n${controller.familyMembers.length} ном.'
             : 'Үй-бүлө:\n${controller.familyMembers.length} ном.',
-        accent: AppTheme.beelineYellow,
-        slide: 3,
+        ringAccent: AppTheme.beelineYellow,
+        gradientColors: const [Color(0xFF23194F), Color(0xFF0E0C1A)],
+        artwork: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Positioned(
+              left: 8,
+              top: 8,
+              child: SizedBox(
+                width: 34,
+                height: 16,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      child: OperatorLogo(operatorName: 'O!', size: 15),
+                    ),
+                    Positioned(
+                      left: 9,
+                      child: OperatorLogo(operatorName: 'Mega', size: 15),
+                    ),
+                    Positioned(
+                      left: 18,
+                      child: OperatorLogo(operatorName: 'Beeline', size: 15),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: -6,
+              top: 10,
+              child: Image.asset(
+                'assets/mascot/bee_senior.png',
+                width: 58,
+                height: 58,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ),
     ];
 
     return SizedBox(
-      height: 104,
+      height: 112,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: items.length,
+        itemCount: cards.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, idx) {
-          final item = items[idx];
-          return InkWell(
-            onTap: () => showStoriesRecap(
-              context,
-              result: result,
-              language: controller.language,
-              bestTariff: bestTariff,
-              onOpenClaim: () => controller.setTabIndex(4),
-              initialSlide: item.slide,
-            ),
-            borderRadius: BorderRadius.circular(20),
+          final card = cards[idx];
+          return _PressableScale(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              showStoriesRecap(
+                context,
+                result: result,
+                language: controller.language,
+                bestTariff: bestTariff,
+                onOpenClaim: () => controller.setTabIndex(4),
+                initialSlide: card.slide,
+              );
+            },
             child: Container(
-              width: 86,
+              width: 88,
+              height: 110,
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -207,30 +394,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     AppTheme.beelineYellow,
-                    item.accent.withValues(alpha: 0.7),
+                    card.ringAccent.withValues(alpha: 0.75),
                   ],
                 ),
               ),
-              child: Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF151518) : Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Icon(item.icon, size: 18, color: item.accent),
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11,
-                        height: 1.2,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : AppTheme.obsidianBlack,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(0.4, -0.4),
+                          radius: 1.1,
+                          colors: card.gradientColors,
+                        ),
+                      ),
+                    ),
+                    card.artwork,
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.42, 1.0],
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.85),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      bottom: 8,
+                      child: Text(
+                        card.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          height: 1.15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -293,9 +504,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: Text(
-                          '${formatSom(result.report.totalSpendSom)} сом',
-                          maxLines: 1,
+                        child: AnimatedSomText(
+                          amount: result.report.totalSpendSom,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 38,
@@ -318,11 +528,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
                 InkWell(
                   onTap: () =>
                       controller.setTabIndex(hasOvercharge ? 1 : 3),
@@ -372,23 +577,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.beelineYellow,
-                    foregroundColor: AppTheme.obsidianBlack,
-                    minimumSize: const Size(0, 40),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.beelineYellow,
+                      foregroundColor: AppTheme.obsidianBlack,
+                      minimumSize: const Size(0, 42),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    onPressed: controller.loadCustomCsvForActiveMember,
+                    icon: const Icon(Icons.upload_file_rounded, size: 16),
+                    label: Text(
+                      isRu ? 'Загрузить CSV' : 'CSV жүктөө',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppTheme.carbonElevated,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 42),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 14,
                       vertical: 10,
+                    ),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      width: 0.8,
                     ),
                     textStyle: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  onPressed: controller.loadCustomCsvForActiveMember,
-                  icon: const Icon(Icons.upload_file_rounded, size: 16),
-                  label: Text(isRu ? 'Загрузить CSV' : 'CSV жүктөө'),
+                  onPressed: () => AnomaliesScreen.showSmsInterceptSheet(
+                    context,
+                    language: controller.language,
+                  ),
+                  icon: const Icon(Icons.sms_failed_rounded, size: 16),
+                  label: Text(isRu ? 'Тест SMS' : 'SMS тест'),
                 ),
               ],
             ),
@@ -553,7 +793,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   final selected = _analyticsTab == i;
                   return Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _analyticsTab = i),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _analyticsTab = i);
+                      },
                       borderRadius: BorderRadius.circular(999),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
@@ -585,19 +828,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            if (_analyticsTab == 0)
-              DailySpendChart(
-                days: result.report.byDay,
-                anomalies: result.anomalies,
-                language: controller.language,
-              )
-            else if (_analyticsTab == 1)
-              CategoryBreakdownChart(
-                report: result.report,
-                language: controller.language,
-              )
-            else
-              _buildTopNumbersList(context, result, isRu),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(anim),
+                  child: child,
+                ),
+              ),
+              child: KeyedSubtree(
+                key: ValueKey<int>(_analyticsTab),
+                child: _analyticsTab == 0
+                    ? DailySpendChart(
+                        days: result.report.byDay,
+                        anomalies: result.anomalies,
+                        language: controller.language,
+                      )
+                    : (_analyticsTab == 1
+                        ? CategoryBreakdownChart(
+                            report: result.report,
+                            language: controller.language,
+                          )
+                        : _buildTopNumbersList(context, result, isRu)),
+              ),
+            ),
           ],
         ),
       ),
@@ -941,6 +1201,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         );
       },
+    );
+  }
+}
+
+class _PressableScale extends StatefulWidget {
+  const _PressableScale({
+    required this.onTap,
+    required this.child,
+  });
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_PressableScale> createState() => _PressableScaleState();
+}
+
+class _PressableScaleState extends State<_PressableScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
     );
   }
 }

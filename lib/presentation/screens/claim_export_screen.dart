@@ -7,6 +7,7 @@ import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/anomaly.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animated_som_text.dart';
 
 /// 1-click legal claim builder and export screen (`Заявление и экспорт`).
 class ClaimExportScreen extends StatefulWidget {
@@ -78,7 +79,6 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
         .where((a) => a.type != AnomalyType.daySpike && a.overchargeSom > Decimal.zero)
         .toList();
     final claimText = controller.generatedClaimText;
-    final refundStr = formatSom(controller.selectedClaimRefundTotal);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -95,10 +95,10 @@ class _ClaimExportScreenState extends State<ClaimExportScreen> {
                   alignment: WrapAlignment.spaceBetween,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      isRu
-                          ? 'Сумма к возврату: $refundStr сом'
-                          : 'Кайтаруу суммасы: $refundStr сом',
+                    AnimatedSomText(
+                      amount: controller.selectedClaimRefundTotal,
+                      prefix: isRu ? 'Сумма к возврату: ' : 'Кайтаруу суммасы: ',
+                      suffix: ' сом',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppTheme.electricGreen,

@@ -7,6 +7,7 @@ import '../../core/utils/decimal_utils.dart';
 import '../../domain/entities/family_member.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animated_som_text.dart';
 import '../widgets/bee_mascot.dart';
 import '../widgets/operator_logo.dart';
 
@@ -33,7 +34,10 @@ class FamilyShieldScreen extends StatelessWidget {
         Card(
           child: SwitchListTile(
             value: controller.seniorMode,
-            onChanged: (v) => controller.toggleSeniorMode(v),
+            onChanged: (v) {
+              HapticFeedback.mediumImpact();
+              controller.toggleSeniorMode(v);
+            },
             secondary: const Icon(Icons.accessibility_new_rounded, size: 30),
             title: Text(
               isRu
@@ -64,7 +68,7 @@ class FamilyShieldScreen extends StatelessWidget {
 
             Widget bentoStat({
               required String label,
-              required String value,
+              required Widget valueWidget,
               required Color accent,
             }) {
               return SizedBox(
@@ -107,15 +111,7 @@ class FamilyShieldScreen extends StatelessWidget {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: Text(
-                          value,
-                          maxLines: 1,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w800,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
+                        child: valueWidget,
                       ),
                     ],
                   ),
@@ -123,30 +119,47 @@ class FamilyShieldScreen extends StatelessWidget {
               );
             }
 
+            final valStyle = theme.textTheme.titleMedium?.copyWith(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            );
+
             return Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
                 bentoStat(
                   label: isRu ? 'Траты семьи' : 'Үй-бүлө',
-                  value: '${formatSom(controller.totalFamilySpendSom)} сом',
+                  valueWidget: AnimatedSomText(
+                    amount: controller.totalFamilySpendSom,
+                    style: valStyle,
+                  ),
                   accent: AppTheme.beelineYellow,
                 ),
                 bentoStat(
                   label: isRu ? 'Переплата' : 'Ашыкча',
-                  value:
-                      '${formatSom(controller.totalFamilyOverchargeSom)} сом',
+                  valueWidget: AnimatedSomText(
+                    amount: controller.totalFamilyOverchargeSom,
+                    style: valStyle,
+                  ),
                   accent: AppTheme.coralRed,
                 ),
                 bentoStat(
                   label: isRu ? 'Утечка / год' : 'Жылдык жоготуу',
-                  value:
-                      '${formatSom(controller.totalFamilyAnnualLeakSom)} сом',
+                  valueWidget: AnimatedSomText(
+                    amount: controller.totalFamilyAnnualLeakSom,
+                    style: valStyle,
+                  ),
                   accent: AppTheme.warmAmber,
                 ),
                 bentoStat(
                   label: isRu ? 'Защищено' : 'Корголгон',
-                  value: '${members.length} ${isRu ? "номеров" : "номер"}',
+                  valueWidget: Text(
+                    '${members.length} ${isRu ? "номеров" : "номер"}',
+                    maxLines: 1,
+                    style: valStyle,
+                  ),
                   accent: AppTheme.electricGreen,
                 ),
               ],

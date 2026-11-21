@@ -182,20 +182,27 @@ class _TariffOptimizerScreenState extends State<TariffOptimizerScreen> {
           ),
         ],
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final op in const ['ALL', 'O!', 'Beeline', 'Mega'])
-              ChoiceChip(
-                selected: _selectedOperator == op,
-                avatar: op == 'ALL'
-                    ? null
-                    : OperatorLogo(operatorName: op, size: 18),
-                label: Text(op == 'ALL' ? (isRu ? 'Все операторы' : 'Баары') : op),
-                onSelected: (_) => setState(() => _selectedOperator = op),
-              ),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final op in const ['ALL', 'O!', 'Beeline', 'Mega'])
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    selected: _selectedOperator == op,
+                    avatar: op == 'ALL'
+                        ? null
+                        : OperatorLogo(operatorName: op, size: 18),
+                    label: Text(op == 'ALL' ? (isRu ? 'Все' : 'Баары') : op),
+                    onSelected: (_) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedOperator = op);
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         ...filtered.map((rec) => _buildTariffCard(context, rec, isRu)),

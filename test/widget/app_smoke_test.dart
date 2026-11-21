@@ -73,7 +73,8 @@ void main() {
 
     final firstCheckbox = find.byType(CheckboxListTile).first;
     await tester.tap(firstCheckbox);
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     final updatedRefund = formatSom(controller.selectedClaimRefundTotal);
     expect(updatedRefund, isNot(equals(initialRefund)));
