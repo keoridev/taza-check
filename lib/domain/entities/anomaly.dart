@@ -45,10 +45,20 @@ class Anomaly {
   final double? zScore;
   final Decimal? baselineMeanSom;
 
-  /// Exports strictly the schema expected by automated jury checks.
-  Map<String, dynamic> toJuryJson() => <String, dynamic>{
-        'datetime': datetime,
-        'type': type.wireName,
-        'reason': reason,
-      };
+  /// Exports the schema expected by automated jury checks (`CLARIFICATIONS_RU.md` §4).
+  Map<String, dynamic> toJuryJson() {
+    final juryDatetime = type == AnomalyType.daySpike && datetime.length == 10
+        ? '$datetime 00:00:00'
+        : datetime;
+    final juryAmount = type == AnomalyType.daySpike
+        ? (costSom - (baselineMeanSom ?? Decimal.zero)).round(scale: 2)
+        : overchargeSom.round(scale: 2);
+    return <String, dynamic>{
+      'datetime': juryDatetime,
+      'type': type.wireName,
+      'anomaly_type': type.wireName,
+      'amount_som': juryAmount.toDouble(),
+      'reason': reason,
+    };
+  }
 }

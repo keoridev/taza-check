@@ -82,8 +82,17 @@ void main() {
         expect(decoded, hasLength(res.anomalies.length));
         for (final item in decoded) {
           final map = item as Map<String, dynamic>;
-          expect(map.keys, containsAll(<String>['datetime', 'type', 'reason']));
-          expect(map.keys, hasLength(3));
+          expect(
+            map.keys,
+            containsAll(<String>[
+              'datetime',
+              'type',
+              'anomaly_type',
+              'amount_som',
+              'reason',
+            ]),
+          );
+          expect(map.keys, hasLength(5));
         }
       });
     }
